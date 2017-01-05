@@ -1,0 +1,14 @@
+;;;; scliba.asd
+
+(asdf:defsystem #:scliba
+  :description "A authoring system in Common Lisp"
+  :author "Andrea De Michele  <andrea.demichele@gmail.com>"
+  :license "GPL v3"
+  :depends-on (#:uiop #:alexandria #:cl-ppcre #:local-time #:scribble #:physical-dimension)
+  :serial t
+  :components ((:file "package")
+               (:file "scliba")
+	       (:file "format")
+	       (:file "formatter") ; to be removed when possible
+	       ))
+

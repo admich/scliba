@@ -1,0 +1,19 @@
+* emacs frontend
+
+per usare emacs ho diverse possibilità.
+
+- usare il più possibile emacs-lisp
+- usare il più possibile common-lisp
+  - fare iteragire emacs con slime/swank che è caricato.
+    Il vantaggio di questo è che se ridefinisco una funzione queste
+    sono direttamente disponibili attraverso l'interfaccia emacs
+  - chiamare da emacs un processo scliba che accetta varie
+    opzioni. Ogni volta che cambio scliba devo rigenerare l'immagine
+    eseguibile
+  - creare processo lisp con server swank a cui emacs e slime si
+    collegano. Ricordarsi di rigenerare l'immagine alla fine della
+    sessione se sono stati fatti dei cambiamenti. Eventualmente il
+    processo potrebbe ricaricare all'inizio tutti i file in modo da
+    evitare di rigenerare  l'immagine ma rallentando
+    l'avvio dell'eseguibile che però essendo un server inizia una
+    volta a sessione.
