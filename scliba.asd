@@ -7,6 +7,7 @@
   :depends-on (#:uiop #:alexandria #:cl-ppcre #:local-time #:scribble #:physical-dimension)
   :serial t
   :components ((:file "package")
+	       (:file "backend")
                (:file "scliba")
 	       (:file "format")
 	       (:file "formatter") ; to be removed when possible

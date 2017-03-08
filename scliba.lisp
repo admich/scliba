@@ -1,5 +1,5 @@
 ;;;; scliba.lisp
-
+;;;; exp-backend
 (in-package #:scliba)
 
 (defvar *math* nil)
@@ -44,6 +44,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	      :initform nil
 	      :accessor authoring-tree-arguments)
    (body :initarg :body
+;	 :initform nil
 	 :reader authoring-tree-body))
   (:documentation "Main parent class for scliba documents"))
 
@@ -57,7 +58,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defclass startstop (authoring-tree)
   ())
 
-(defmethod export-document ((document startstop) (backend (eql :context)) outstream)
+(defmethod export-document ((document startstop) (backend context-backend) outstream)
   (let ((clstr (string-downcase (symbol-name (class-name (class-of document))))))
     (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
     (dolist (tree (slot-value document 'body))
@@ -102,7 +103,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     `(progn
        (def-authoring-tree ,name (startstop ,@superclass))
        
-       (defmethod export-document ((document ,name) (backend (eql :context)) outstream)
+       (defmethod export-document ((document ,name) (backend context-backend) outstream)
        	 (format outstream "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
        	 (dolist (tree (slot-value document 'body))
        	   (export-document tree backend outstream))
@@ -118,7 +119,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;     `(progn
 ;;        (def-authoring-tree ,name (startstop ,@superclass))
 
-;;        (defmethod export-document ((document ,name) (backend (eql :context)) outstream)
+;;        (defmethod export-document ((document ,name) (backend context-backend) outstream)
 ;;        	 (format outstream "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
 ;;        	 (dolist (tree (slot-value document 'body))
 ;;        	   (export-document tree backend outstream))
@@ -155,7 +156,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defclass input-tex (authoring-tree)
   ((file :initarg :file)))
 
-(defmethod export-document ((document input-tex) (backend (eql :context)) outstream)
+(defmethod export-document ((document input-tex) (backend context-backend) outstream)
   (format outstream "\\component ~A~%" (pathname-name (slot-value document 'file)))
   )
 
@@ -192,7 +193,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;; document part core
 
 (def-authoring-tree par)
-(defmethod export-document :before ((document par) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document par) (backend context-backend) outstream)
   (format outstream "~&\\par ~@[\\inouter{~a}~]" (export-document-on-string (getf (authoring-tree-arguments document) :tag) backend)))
 
 (def-startstop framedtext)
@@ -202,16 +203,16 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 (def-authoring-tree hline)
-(defmethod export-document ((document hline) (backend (eql :context)) outstream)
+(defmethod export-document ((document hline) (backend context-backend) outstream)
   (format outstream "~&\\hairline~%"))
 
 ;; footnote
 (def-authoring-tree footnote)
 
-(defmethod export-document :before ((document footnote) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document footnote) (backend context-backend) outstream)
   (format outstream "\\footnote{"))
 
-(defmethod export-document :after ((document footnote) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document footnote) (backend context-backend) outstream)
   (format outstream "}"))
 
 
@@ -219,11 +220,11 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defvar *section-level* 0)
 (defparameter *section-context-labels* (list "part" "chapter" "section" "subsection" "subsubsection"))
 
-(defmethod export-document :before ((document section) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document section) (backend context-backend) outstream)
   (incf *section-level*)
   (format outstream "~&\\start~A~@[[~A]~]~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context)))
 
-(defmethod export-document :after ((document section) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document section) (backend context-backend) outstream)
   (format outstream "~&\\stop~A~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context))
   (decf *section-level*))
 
@@ -233,23 +234,23 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-startstop itemize)
 (def-authoring-tree item)
-(defmethod export-document :before ((document item) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document item) (backend context-backend) outstream)
   (format outstream "~&\\item "))
 
 (def-simple-authoring-tree bf)
-(defmethod export-document :before ((document bf) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document bf) (backend context-backend) outstream)
   (format outstream "{\\bf "))
-(defmethod export-document :after ((document bf) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document bf) (backend context-backend) outstream)
   (format outstream "}"))
 (def-simple-authoring-tree it)
-(defmethod export-document :before ((document it) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document it) (backend context-backend) outstream)
   (format outstream "{\\it "))
-(defmethod export-document :after ((document it) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document it) (backend context-backend) outstream)
   (format outstream "}"))
 
 
 (def-simple-authoring-tree newpage)
-(defmethod export-document ((document newpage) (backend (eql :context)) outstream)
+(defmethod export-document ((document newpage) (backend context-backend) outstream)
   (format outstream "\\page "))
 
 (defmacro emph (&rest body)
@@ -258,7 +259,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (def-startstop columns)
 
 (def-authoring-tree newcolumn)
-(defmethod export-document ((document newcolumn) (backend (eql :context)) outstream)
+(defmethod export-document ((document newcolumn) (backend context-backend) outstream)
   (format outstream "~&\\column~%"))
 
 
@@ -270,32 +271,32 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (setf *math* nil))
 
 (def-authoring-tree ref)
-(defmethod export-document ((document ref) (backend (eql :context)) outstream)
+(defmethod export-document ((document ref) (backend context-backend) outstream)
   (format outstream "\\in[~a]" (get-argument document :ref)))
 
 (def-authoring-tree figure)
-(defmethod export-document :before ((document figure) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document figure) (backend context-backend) outstream)
   (format outstream "\\placefigure[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption)))
-(defmethod export-document :after ((document figure) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document figure) (backend context-backend) outstream)
   (format outstream "}"))
 (def-startstop% mpcode :context-name "MPcode")
 
 
 ;;;;TABLE
 (def-authoring-tree table)
-(defmethod export-document :before ((document table) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document table) (backend context-backend) outstream)
   (format outstream "\\bTABLE"))
-(defmethod export-document :after ((document table) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document table) (backend context-backend) outstream)
   (format outstream "\\eTABLE"))
 (def-authoring-tree table-row)
-(defmethod export-document :before ((document table-row) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document table-row) (backend context-backend) outstream)
   (format outstream "\\bTR"))
-(defmethod export-document :after ((document table-row) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document table-row) (backend context-backend) outstream)
   (format outstream "\\eTR"))
 (def-authoring-tree table-cell)
-(defmethod export-document :before ((document table-cell) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document table-cell) (backend context-backend) outstream)
   (format outstream "\\bTD"))
-(defmethod export-document :after ((document table-cell) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document table-cell) (backend context-backend) outstream)
   (format outstream "\\eTD"))
 
 
@@ -329,17 +330,17 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;     (call-next-method)))
 (def-simple-authoring-tree imath (math))
 
-(defmethod export-document :before ((document imath) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document imath) (backend context-backend) outstream)
   (format outstream "$"))
-(defmethod export-document :after ((document imath) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document imath) (backend context-backend) outstream)
   (format outstream "$"))
 
 (def-authoring-tree phys-n)
-(defmethod export-document  ((document phys-n) (backend (eql :context)) outstream)
+(defmethod export-document  ((document phys-n) (backend context-backend) outstream)
   (scliba-f:n outstream (first (authoring-tree-body document)) nil nil))
 
 (def-startstop formula (math))
-(defmethod export-document :before ((document formula) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document formula) (backend context-backend) outstream)
   (format outstream "~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref)))
 
 
@@ -389,7 +390,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;; (defmacro compito (arguments &body body)
 ;;   `(make-instance 'compito :arguments (list ,@arguments) :body (flatten (list ,@body))))
 
-(defmethod export-document :before ((document compito) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document compito) (backend context-backend) outstream)
   (format outstream "
 \\usepath[../..]
 \\project didattica
@@ -405,7 +406,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;; (dolist (tree (slot-value document 'body))
 ;;   (export-document tree backend outstream))
 
-(defmethod export-document :after ((document compito) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document compito) (backend context-backend) outstream)
   (format outstream "
 % \\doifmode{soluzioni}{\\printsoluzioni}
 \\stoptext"))
@@ -414,20 +415,20 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ())
 (defmacro infoform ()
   `(make-instance 'infoform))
-(defmethod export-document ((document infoform) (backend (eql :context)) outstream)
+(defmethod export-document ((document infoform) (backend context-backend) outstream)
   (format outstream "
 \\infoform~%"))
 
 (def-startstop esercizio)
 (def-startstop soluzione)
 ;;temp hack I want implement soluzione buffer in lisp
-(defmethod export-document :before ((document soluzione) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document soluzione) (backend context-backend) outstream)
   (format outstream "~&\\beginsoluzione~%"))
-(defmethod export-document :after ((document soluzione) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document soluzione) (backend context-backend) outstream)
   (format outstream "~&\\endsoluzione~%"))
 
 (def-authoring-tree soluzioni)
-(defmethod export-document ((document soluzioni) (backend (eql :context)) outstream)
+(defmethod export-document ((document soluzioni) (backend context-backend) outstream)
   (format outstream "
 \\doifmode{soluzioni}{\\printsoluzioni}~%"))
 
@@ -437,7 +438,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ())
 (defmacro last-sol ()
   `(make-instance 'last-sol))
-(defmethod export-document ((document last-sol) (backend (eql :context)) outstream)
+(defmethod export-document ((document last-sol) (backend context-backend) outstream)
   (format outstream "~[A~;B~;C~;D~;E~;F~] " *last-sol*))
 
 (def-authoring-tree verofalso (itemize random-body))
@@ -452,7 +453,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
      (make-instance 'verofalso :arguments (list ,@arguments) :body (flatten (list  ,@body)))))
 
 (def-simple-authoring-tree vfbox)
-(defmethod export-document ((document vfbox) (backend (eql :context)) outstream)
+(defmethod export-document ((document vfbox) (backend context-backend) outstream)
   (format outstream "\\framed[width=1em,strut=yes]{V}\\thinspace\\framed[width=1em,strut=yes]{F}\\thinspace "))
 
 
@@ -524,14 +525,15 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defvar *i-compito* 0)
 (defun compila-compito (compito &key n (directory *compiti-directory*))
   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
-  (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (if n
-	(let ((*randomize* t))
-          (format stream "\\starttext~%")
-	  (dotimes (*i-compito* n)
-	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) :context stream))
-	  (format stream "\\stoptext~%"))
-	(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) :context stream))))
+  (let ((backend (make-instance 'context-backend)))
+    (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (if n
+	  (let ((*randomize* t))
+	    (format stream "\\starttext~%")
+	    (dotimes (*i-compito* n)
+	      (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend stream))
+	    (format stream "\\stoptext~%"))
+	  (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend stream)))))
 
 ;; (defun compila-context-compito (file &key (directory *compiti-directory*))
 ;;   (let ((file (uiop:merge-pathnames* directory file)))
@@ -554,11 +556,12 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (compila-guarda-compito file :n n :directory directory :soluzioni t))
 
 (defun genera-esercizio-preview (esercizio)
-  (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (format stream "\\usepath[../..]~%\\project didattica~%")
-    (export-document (read-file (merge-pathnames *esercizi-directory*
-						 (make-pathname :name esercizio :type "lisp"))) :context stream)
-    (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%"))
+  (let ((backend (make-instance 'context-backend)))
+    (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (format stream "\\usepath[../..]~%\\project didattica~%")
+      (export-document (read-file (merge-pathnames *esercizi-directory*
+						   (make-pathname :name esercizio :type "lisp"))) backend stream)
+      (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
 				     esercizio)))
     (compila-context file :mode "soluzioni"))
@@ -566,15 +569,16 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ;;   (let ((command (format nil "context --purgeall --mode=soluzioni ~a"  file)))
   ;;     (uiop:run-program  command   :output t))
     ; (uiop:run-program (list "context" (pathname-name file)) :output t)
-    )
+  )
 
 ;;;;;;;;;PTNH
 (defparameter *ptnh-directory* #p"/home/admich/Documenti/scuola/my-didattica/ptnh/")
 (defun compila-ptnh (file)
   "genera il sorgente context dal sorgente lisp"
-  (with-open-file (stream (merge-pathnames *ptnh-directory* (make-pathname :name file :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (format stream "\\environment env_ptnh~%")
-    (export-document (read-file (merge-pathnames *ptnh-directory* (make-pathname :name file :type "lisp"))) :context stream)))
+  (let ((backend (make-instance 'context-backend)))
+    (with-open-file (stream (merge-pathnames *ptnh-directory* (make-pathname :name file :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+     (format stream "\\environment env_ptnh~%")
+     (export-document (read-file (merge-pathnames *ptnh-directory* (make-pathname :name file :type "lisp"))) backend stream))))
 
 
 
@@ -591,15 +595,16 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-authoring-tree attenzione)
 
-(defmethod export-document :before ((document attenzione) (backend (eql :context)) outstream)
+(defmethod export-document :before ((document attenzione) (backend context-backend) outstream)
   (format outstream "~&\\textrule[top]{Attenzione!}~%"))
 
-(defmethod export-document :after ((document attenzione) (backend (eql :context)) outstream)
+(defmethod export-document :after ((document attenzione) (backend context-backend) outstream)
   (format outstream "~&\\textrule~%"))
 
 (defun pedb-all-exercize ()
-  (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-   (let ((*section-level* 1)) (export-document (raccolta-esercizi) :context stream))))
+  (let ((backend (make-instance 'context-backend)))
+    (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
+     (let ((*section-level* 1)) (export-document (raccolta-esercizi) backend stream)))))
 
 #|
 (compito (:title "Verifica di fisica" :scuola nil :rfoot "feb 2016 Q2C1 (w07)")
