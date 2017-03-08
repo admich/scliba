@@ -76,7 +76,7 @@
 
 ;; (let ((um :km) (si :si)) (with-nf-options (:system-of-units (funcall #'antik::make-sysunits (list um) si))  (pq-format #_3_m)))
 
-(defun pq-format (pq &key (precision 3) (exponent 0) (s-o-u (list :si)) (new-unit nil))
+(defun pq-format (pq &key (precision 3) (exponent 0) (s-o-u (list :si :deg)) (new-unit nil))
   "format the physical quantity"
   (with-nf-options (:system-of-units (funcall #'antik::make-sysunits (cdr s-o-u) (car s-o-u)))
       (multiple-value-bind (num unit) (pqval pq)

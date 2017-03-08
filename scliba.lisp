@@ -3,7 +3,7 @@
 (in-package #:scliba)
 
 (defvar *math* nil)
-
+(defparameter *debug* nil)
 
 ;;; HIGH security issue
 ;; (defun read-file (file)
@@ -156,12 +156,15 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ((file :initarg :file)))
 
 (defmethod export-document ((document input-tex) (backend (eql :context)) outstream)
-  (format outstream "\\component ~A~%" (pathname-name (slot-value document 'file))))
+  (format outstream "\\component ~A~%" (pathname-name (slot-value document 'file)))
+  )
 
 (defun input (filename)
   (if (string= "tex" (pathname-type filename))
       (make-instance 'input-tex :file filename)
-      (read-file filename))) ;; read-file
+      (if *debug*
+	  (list (read-file filename) (format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name filename)))
+	  (read-file filename)))) ;; read-file
 
 ;; random
 (defparameter *randomize* nil)
@@ -357,7 +360,8 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ;;   )
   )
 
-(defparameter *command-pdf-viewer* "zathura")
+;(defparameter *command-pdf-viewer* "zathura")
+(defparameter *command-pdf-viewer* "emacsclient -n")
 
 (defun guarda (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
@@ -453,9 +457,12 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 (def-authoring-tree scelte (itemize random-body))
-
+;; columns in itemize don't work inside two column layout
 (defmethod initialize-instance :after ((class scelte) &rest rest)
-  (setf (getf (authoring-tree-arguments class) :context) "A,packed,joinedup"))
+	   (let ((cols (getf (authoring-tree-arguments class) :columns)))
+	     (if cols
+		 (setf (getf (authoring-tree-arguments class) :context) (format nil "A,packed,joinedup,columns,~r" cols))
+		 (setf (getf (authoring-tree-arguments class) :context) "A,packed,joinedup"))))
 
 (defmethod export-document :after ((document scelte) backend outstream)
   (setf *last-sol* (position :sol (slot-value document 'body) :key #'authoring-tree-arguments :test #'member)))
@@ -515,38 +522,36 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 \\selectblocks[soluzione][criterium=section]}")))))
 
 (defvar *i-compito* 0)
-(defun compila-compito (compito &key n)
+(defun compila-compito (compito &key n (directory *compiti-directory*))
   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
-  (with-open-file (stream (merge-pathnames *compiti-directory* (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+  (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
     (if n
 	(let ((*randomize* t))
           (format stream "\\starttext~%")
 	  (dotimes (*i-compito* n)
-	    (export-document (read-file (merge-pathnames *compiti-directory* (make-pathname :name compito :type "lisp"))) :context stream))
+	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) :context stream))
 	  (format stream "\\stoptext~%"))
-	(export-document (read-file (merge-pathnames *compiti-directory* (make-pathname :name compito :type "lisp"))) :context stream))))
+	(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) :context stream))))
 
-(defun compila-context-compito (file)
-  (let ((file (uiop:merge-pathnames* *compiti-directory* file)))
-    (compila-context file)))
+;; (defun compila-context-compito (file &key (directory *compiti-directory*))
+;;   (let ((file (uiop:merge-pathnames* directory file)))
+;;     (compila-context file)))
 
-(defun compila-context-esercizio (file)
-  (let ((file (uiop:merge-pathnames* *esercizi-directory* file)))
-    (compila-context file)))
+;; (defun compila-context-esercizio (file)
+;;   (let ((file (uiop:merge-pathnames* *esercizi-directory* file)))
+;;     (compila-context file)))
 
-(defun compila-guarda-compito (file &key n)
-  (compila-compito file :n n)
-  (let ((file (uiop:merge-pathnames* *compiti-directory* file))
-	(file-pdf (uiop:merge-pathnames* *compiti-directory* (uiop:make-pathname* :name file :type "pdf"))))
-    (compila-context file)
+(defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil))
+  (compila-compito file :n n :directory directory)
+  (let ((file (uiop:merge-pathnames* directory file))
+	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
+    (if soluzioni
+	(compila-context file :mode "soluzioni")
+	(compila-context file))
     (guarda file-pdf)))
 
-(defun compila-guarda-compito-soluzioni (file &key n)
-  (compila-compito file :n n)
-  (let ((file (uiop:merge-pathnames* *compiti-directory* file))
-	(file-pdf (uiop:merge-pathnames* *compiti-directory* (uiop:make-pathname* :name file :type "pdf"))))
-    (compila-context-soluzioni file)
-    (guarda file-pdf)))
+(defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
+  (compila-guarda-compito file :n n :directory directory :soluzioni t))
 
 (defun genera-esercizio-preview (esercizio)
   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
@@ -593,7 +598,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (format outstream "~&\\textrule~%"))
 
 (defun pedb-all-exercize ()
-  (with-open-file (stream (merge-pathnames *compiti-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
+  (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
    (let ((*section-level* 1)) (export-document (raccolta-esercizi) :context stream))))
 
 #|
