@@ -10,6 +10,7 @@
 	       (:file "backend")
                (:file "scliba")
 	       (:file "format")
-	       (:file "formatter") ; to be removed when possible
-	       ))
+	       (:file "formatter")	; to be removed when possible
+	       (:file "pedb")
+	       (:file "ptnh")))
 

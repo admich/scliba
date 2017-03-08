@@ -1,10 +1,10 @@
 (require 'cl)
 (load "skeletons-cl-authoring" t)
 (defun pedb-store-dir ()
-  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring scliba::*esercizi-directory*)"))) 1 -1))
+  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-directory*)"))) 1 -1))
 
 (defun pedb-preview-dir ()
-  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring scliba::*esercizi-preview-directory*)"))) 1 -1))
+  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-preview-directory*)"))) 1 -1))
 
 (defvar *pedb-raccolta-buffer* nil "nome file e buffer del compito associato")
 
@@ -14,9 +14,9 @@
 
 
 (defun pedb-esercizi-argomenti ()
-  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "scliba::*esercizi-argomenti*"))))))
+  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-argomenti*"))))))
 (defun pedb-esercizi-tipi ()
-  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "scliba::*esercizi-tipi*"))))))
+  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-tipi*"))))))
 
 
 
@@ -66,7 +66,7 @@
 
 (defun pedb-all-exercises ()
   "Return all the exercises"
-  (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (scliba::tutti-esercizi))")))))))
+  (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))")))))))
 
   
 ;; (defun exe-all-exercises-with-topic (topic)
@@ -158,7 +158,7 @@ Letters do not insert themselves; instead, they are commands."
 
 (defun pedb-genera-esercizio ()
   (interactive)
-  (let ((comand (concat "(scliba::genera-esercizio-preview \"" (file-name-base (tabulated-list-get-id)) "\")")))
+  (let ((comand (concat "(pedb::genera-esercizio-preview \"" (file-name-base (tabulated-list-get-id)) "\")")))
 ;    (message comand)
     (slime-eval `(swank:eval-and-grab-output ,comand))
     (message "Compilato esercizio %s" (tabulated-list-get-id))))
