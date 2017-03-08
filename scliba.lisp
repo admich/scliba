@@ -653,7 +653,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defun pedb-all-exercize ()
   (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
     (let ((*section-level* 1)
-	  (backend (make-instance 'context-backend)))
+	  (backend (make-instance 'context-backend :stream stream)))
       (export-document (raccolta-esercizi) backend))))
 
 #|
