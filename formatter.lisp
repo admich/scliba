@@ -24,9 +24,9 @@
        (if *math* str (concatenate 'string "$" str "$"))))))
 
 
-(defun pq-format (pq &key (precision 3) (exponent 0) (s-o-u :si))
-  "format the physical quantity"
-  (number-format (pqval pq) :precision precision :exponent exponent))
+;; (defun pq-format (pq &key (precision 3) (exponent 0) (s-o-u :si))
+;;   "format the physical quantity"
+;;   (number-format (pqval pq) :precision precision :exponent exponent))
 
 (defun number-scientific-notation (num &key (precision 3))
   (let ((exp (number-exponent num)))
