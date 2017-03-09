@@ -45,7 +45,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	      :initform nil
 	      :accessor authoring-tree-arguments)
    (body :initarg :body
-;	 :initform nil
+	 :initform nil
 	 :reader authoring-tree-body))
   (:documentation "Main parent class for scliba documents"))
 

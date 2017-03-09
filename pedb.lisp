@@ -1,8 +1,17 @@
 (defpackage #:scliba-pedb
-  (:use #:cl #:scliba)
+  (:use #:cl #:alexandria #:scliba #:antik)
+  (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
+ #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
+ #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
+ #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
+ #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
+ #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
+ #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
+ #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
+ #:PSI #:KNOTS #:ROTATE)
   (:nicknames #:pedb))
 
-(in-package #:pedb)
+(in-package #:scliba-pedb)
 
 (defparameter *esercizi-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/exercises/") ; #p"/home/admich/Documenti/scuola/my-didattica/context/esercizi/"
 (defparameter *esercizi-preview-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/preview/")
@@ -32,7 +41,7 @@
 \\starttext
 \\compito[title=~A,scuola=none]
 \\makecompitotitle
-~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (getf (slot-value document 'arguments) :title) (getf (slot-value document 'arguments) :rfoot))))
+~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
 
 
 ;; (dolist (tree (slot-value document 'body))
@@ -99,13 +108,13 @@
 (def-authoring-tree scelte (itemize random-body))
 ;; columns in itemize don't work inside two column layout
 (defmethod initialize-instance :after ((class scelte) &rest rest)
-	   (let ((cols (getf (authoring-tree-arguments class) :columns)))
+  (let ((cols (get-argument class :columns)))
 	     (if cols
 		 (setf (getf (authoring-tree-arguments class) :context) (format nil "A,packed,joinedup,columns,~r" cols))
 		 (setf (getf (authoring-tree-arguments class) :context) "A,packed,joinedup"))))
 
 (defmethod export-document :after ((document scelte) backend)
-  (setf *last-sol* (position :sol (slot-value document 'body) :key #'authoring-tree-arguments :test #'member)))
+  (setf *last-sol* (position :sol (authoring-tree-body document) :key #'authoring-tree-arguments :test #'member)))
 
 (def-authoring-tree parti (itemize))
 (defmethod initialize-instance :after ((class parti) &rest rest)
@@ -117,7 +126,8 @@
 	    (or (probe-file ,file)
 		(probe-file (merge-pathnames *esercizi-directory* (make-pathname :name ,file :type "lisp")))
 		(merge-pathnames *esercizi-directory* (make-pathname :name ,file :type "tex")))))
-       (input ,new-path))))
+       (input ,new-path)
+       )))
 
 (defmacro esercizi (&rest exes)
   `(loop for x in (list ,@exes)
@@ -142,7 +152,9 @@
   (remove-if-not (lambda (x) (string= argomento (get-esercizio-argomento x))) (tutti-esercizi)))
 
 (defun raccolta-esercizi ()
+  
   (let ((*randomize* nil))
+    
     (compito (:title "Eserciziario di fisica" :soluzioni t :rfoot (format nil "Compilato \\date\\ \\currenttime"))
       "
 \\enablemode[soluzioni]
@@ -159,7 +171,9 @@
 			(format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name ese))))
 	     "
 \\doifmode{soluzioni}{\\subject{Soluzioni}
-\\selectblocks[soluzione][criterium=section]}")))))
+\\selectblocks[soluzione][criterium=section]}")))
+    )
+  )
 
 (defvar *i-compito* 0)
 (defun compila-compito (compito &key n (directory *compiti-directory*))

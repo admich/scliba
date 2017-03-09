@@ -13,7 +13,68 @@
  #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
  #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
  #:PSI #:KNOTS #:ROTATE)
-  (:export *math*))
+  (:export #:*math*
+	   #:*debug*
+	   #:*randomize*
+	   
+	   #:input
+	   #:read-file
+	   
+	   #:authoring-tree
+	   #:authoring-tree-arguments
+	   #:authoring-tree-body
+	   #:get-argument
+	   #:export-document
+	   #:export-document-on-string
+	   
+	   #:backend
+	   #:backend-outstream
+	   #:context-backend
+	   #:autarchy-backend
+	   #:aut-context-backend
+
+	   #:def-authoring-tree
+	   #:def-simple-authoring-tree
+	   #:def-startstop
+           
+	   #:choose-one-of
+           
+	   
+	   #:authoring-document
+	   #:startstop
+	   #:input-tex
+	   #:random-body
+	   #:par
+	   #:hline
+	   #:footnote
+	   #:section
+	   #:*section-level*
+	   #:*section-context-labels*
+	   #:bf
+	   #:framedtext
+	   #:columns
+	   #:randomize
+	   #:itemize
+	   #:item
+	   #:it
+	   #:newpage
+	   #:emph
+	   #:newcolumn
+	   #:math
+	   #:ref
+	   #:figure
+	   #:mpcode
+	   #:table
+	   #:table-row
+	   #:table-cell
+	   #:imath
+	   #:phys-n
+	   #:formula
+	   #:compila-context
+	   #:guarda
+	   #:pq-format
+	   #:number-format
+	   #:pq-change-unit))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
