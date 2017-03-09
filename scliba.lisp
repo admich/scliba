@@ -51,7 +51,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 (defun get-argument (auth-tree arg)
-  "get"
+  "get an argument from an authoring-tree"
   (getf (authoring-tree-arguments auth-tree) arg))
 
 ;;; export-document generic
@@ -72,20 +72,13 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (let ((outstream (backend-outstream backend)))
     (format outstream "")))
 
-(defclass authoring-document (authoring-tree)
-  ())
+(defmethod export-document ((document string) backend)
+    (let ((outstream (backend-outstream backend)))
+      (format outstream  document)))
 
-
-(defclass startstop (authoring-tree)
-  ())
-
-(defmethod export-document ((document startstop) (backend context-backend))
-  (let ((outstream (backend-outstream backend))
-	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
-    (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
-    (dolist (tree (slot-value document 'body))
-      (export-document tree backend outstream))
-    (format outstream "~&\\stop~A~%" clstr)))
+(defmethod export-document ((document authoring-tree) backend)
+  (dolist (tree (slot-value document 'body))
+    (export-document tree backend)))
 
 
 ;;; macro utility
@@ -151,15 +144,32 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 
+(defclass authoring-document (authoring-tree)
+  ()
+  (:documentation "Document root"))
 
-(defmethod export-document ((document authoring-tree) backend)
-  (dolist (tree (slot-value document 'body))
-    (export-document tree backend)))
+;; (defmethod export-document ((document authoring-document) (backend context-backend))
+;;   (let ((outstream (backend-outstream backend))
+;; 	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
+;;     (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
+;;     (dolist (tree (slot-value document 'body))
+;;       (export-document tree backend outstream))
+;;     (format outstream "~&\\stop~A~%" clstr)))
 
 
-(defmethod export-document ((document string) backend)
-    (let ((outstream (backend-outstream backend)))
-      (format outstream  document)))
+
+(defclass startstop (authoring-tree)
+  ())
+
+(defmethod export-document ((document startstop) (backend context-backend))
+  (let ((outstream (backend-outstream backend))
+	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
+    (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
+    (dolist (tree (slot-value document 'body))
+      (export-document tree backend outstream))
+    (format outstream "~&\\stop~A~%" clstr)))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part utility

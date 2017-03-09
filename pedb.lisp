@@ -23,7 +23,7 @@
 (defparameter *esercizi-tipi* '(("true/false" . "tf") ("choices" . "ch") ("free" . "fr") ("fill" . "fl"))
   "tipi")
 
-(def-authoring-tree compito)
+(def-authoring-tree compito (authoring-document))
 ;; (defclass compito (authoring-document)
 ;;   ())
 
