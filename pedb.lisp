@@ -23,44 +23,77 @@
 (defparameter *esercizi-tipi* '(("true/false" . "tf") ("choices" . "ch") ("free" . "fr") ("fill" . "fl"))
   "tipi")
 
-(def-authoring-tree compito (authoring-document))
-;; (defclass compito (authoring-document)
-;;   ())
+(def-authoring-tree compito (authoring-document) "Compito root document")
 
 ;; (defmacro compito (arguments &body body)
 ;;   `(make-instance 'compito :arguments (list ,@arguments) :body (flatten (list ,@body))))
 
-(defmethod export-document :before ((document compito) (backend context-backend))
+(defmethod export-document :around ((document compito) (backend context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "
 \\usepath[../..]
 \\project didattica
-~@[\\setupbodyfont[~dpt]~]
-~@[\\setupinterlinespace[~a]~]
 ~:[% ~;~]\\enablemode[soluzioni]
-\\starttext
+"  (get-argument document :soluzioni))
+    (call-next-method)))
+
+;; (defmethod export-document :before ((document compito) (backend context-backend))
+;;   (let ((outstream (backend-outstream backend)))
+;;     (format outstream "
+;; \\usepath[../..]
+;; \\project didattica
+;; ~@[\\setupbodyfont[~dpt]~]
+;; ~@[\\setupinterlinespace[~a]~]
+;; ~:[% ~;~]\\enablemode[soluzioni]
+;; \\starttext
+;; \\compito[title=~A,scuola=none]
+;; \\makecompitotitle
+;; ~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
+
+(defmethod export-document :before ((document compito) (backend context-backend))
+  (let ((outstream (backend-outstream backend)))
+    (format outstream "
 \\compito[title=~A,scuola=none]
 \\makecompitotitle
-~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
+~@[\\def\\rfoot{~A}~]"  (get-argument  document :title) (get-argument document :rfoot))))
+
+(defmethod export-document :before ((document compito) (backend aut-context-backend))
+  (export-document (footer (:left "" :right (get-argument document :rfoot))) backend)
+  (export-document (title (get-argument document :title)) backend))
 
 
 ;; (dolist (tree (slot-value document 'body))
 ;;   (export-document tree backend outstream))
 
-(defmethod export-document :after ((document compito) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "
-% \\doifmode{soluzioni}{\\printsoluzioni}
-\\stoptext")))
+;; (defmethod export-document :after ((document compito) (backend context-backend))
+;;   (let ((outstream (backend-outstream backend)))
+;;     (format outstream "
+;; % \\doifmode{soluzioni}{\\printsoluzioni}
+;; ")))
+;; (defclass infoform (authoring-tree)
+;;   ())
+;; (defmacro infoform ()
+;;   `(make-instance 'infoform))
 
-(defclass infoform (authoring-tree)
-  ())
+;; (def-simple-authoring-tree infoform (authoring-tree) "Form nome e cognome per compiti")
+
+;; (defmethod export-document ((document infoform) (backend context-backend))
+;;   (let ((outstream (backend-outstream backend)))
+;;     (format outstream "
+;; \\infoform~%")))
+
 (defmacro infoform ()
-  `(make-instance 'infoform))
-(defmethod export-document ((document infoform) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "
-\\infoform~%")))
+  "Form nome e cognome per compiti"
+  `(table (:widths '(0.5 0.5) :frame nil)
+     (table-row ()
+       (table-cell () "Nome: " (hlinefill ()))
+       (table-cell () "Classe: "(hlinefill ())))
+     (table-row ()
+       (table-cell () "Cognome: " (hlinefill ()))
+       (table-cell () "Data: " (hlinefill ())))))
+
+;; (defmethod export-document ((document infoform) (backend autarchy-backend))
+;;   (export-document (infoform%) backend))
 
 (def-startstop esercizio)
 (def-startstop soluzione)

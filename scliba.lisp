@@ -94,16 +94,17 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;; 	 `(make-instance  ,cl :arguments (list ,@arguments) :body (flatten (list  ,@body)))
 ;; ;	 (when (typep (make-instance ',name) 'math) (setf *math* nil))
 ;; 	 ))))
-(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)))
+(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
   `(progn
      (defclass ,name (,@superclass)
-       ())
+       ()
+       (:documentation ,documentation))
      (defmacro ,name (arguments &body body)
        (let ((cl '',name))
 	 `(let ((*math* (if (typep (make-instance ,cl) 'math) t nil)))
 	    (make-instance  ,cl :arguments (list ,@arguments) :body (flatten (list  ,@body))))))))
 
-(defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)))
+(defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
   `(progn
      (defclass ,name (,@superclass)
        ())
@@ -144,10 +145,19 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 
-(defclass authoring-document (authoring-tree)
-  ()
-  (:documentation "Document root"))
+;; (defclass authoring-document (authoring-tree)
+;;   ()
+;;   (:documentation "Document root"))
 
+(def-authoring-tree authoring-document (authoring-tree) "Document root")
+(defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
+  (let ((outstream (backend-outstream backend)))
+    (format outstream "~%
+~@[\\setupbodyfont[~dpt]~]
+~@[\\setupinterlinespace[~a]~]
+\\starttext~%" (get-argument document :bodyfont) (get-argument document :interline))
+    (call-next-method)
+    (format outstream "~&\\stoptext~%")))
 ;; (defmethod export-document ((document authoring-document) (backend context-backend))
 ;;   (let ((outstream (backend-outstream backend))
 ;; 	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
@@ -226,9 +236,14 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 (def-authoring-tree hline)
-(defmethod export-document ((document hline) (backend context-backend))
+(defmethod export-document ((document hline) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "~&\\hairline~%")))
+
+(def-authoring-tree hlinefill)
+(defmethod export-document ((document hlinefill) (backend mixin-context-backend))
+  (let ((outstream (backend-outstream backend)))
+    (format outstream "~~\\hrulefill ~~")))
 
 ;; footnote
 (def-authoring-tree footnote)
@@ -242,6 +257,26 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     (format outstream "}")))
 
 
+;; (def-authoring-tree title)
+(defmacro title (string)
+  `(centering (bf (big ,string))))
+
+(def-authoring-tree footer (authoring-tree) "the footer of the page")
+
+(defmethod export-document :before ((document footer) (backend aut-context-backend))
+  (format (backend-outstream backend) "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right))
+  )
+
+(def-simple-authoring-tree centering (authoring-tree) "Center the content")
+(defmethod export-document :around ((document centering) (backend mixin-context-backend))
+  (format (backend-outstream backend) "~&\\midaligned{")
+  (call-next-method)
+  (format (backend-outstream backend) "}"))
+(def-simple-authoring-tree big)
+(defmethod export-document :around ((document big) (backend mixin-context-backend))
+  (format (backend-outstream backend) "{\\tfb ")
+  (call-next-method)
+  (format (backend-outstream backend) "}"))
 (def-authoring-tree section)
 (defvar *section-level* 0)
 (defparameter *section-context-labels* (list "part" "chapter" "section" "subsection" "subsubsection"))
@@ -323,26 +358,33 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 ;;;;TABLE
 (def-authoring-tree table)
-(defmethod export-document :before ((document table) (backend context-backend))
+(defmethod export-document :before ((document table) (backend mixin-context-backend))
+  (let ((outstream (backend-outstream backend))
+	(widths (get-argument document :widths))
+	(frame (get-argument document :frame))
+	)
+    (unless frame (format outstream "~&\\setupTABLE[frame=off]~%"))
+    (when widths
+      (dotimes (n (length widths))
+	(format outstream "\\setupTABLE[c][~d][width=~a\\textwidth]~%" (+ n 1) (nth n widths))))
+    (format outstream "\\bTABLE~%")))
+(defmethod export-document :after ((document table) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
-    (format outstream "\\bTABLE")))
-(defmethod export-document :after ((document table) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\eTABLE")))
+    (format outstream "~&\\eTABLE~%")))
 (def-authoring-tree table-row)
-(defmethod export-document :before ((document table-row) (backend context-backend))
+(defmethod export-document :before ((document table-row) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
-    (format outstream "\\bTR")))
-(defmethod export-document :after ((document table-row) (backend context-backend))
+    (format outstream "\\bTR ")))
+(defmethod export-document :after ((document table-row) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
-    (format outstream "\\eTR")))
+    (format outstream "\\eTR ")))
 (def-authoring-tree table-cell)
-(defmethod export-document :before ((document table-cell) (backend context-backend))
+(defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
-    (format outstream "\\bTD")))
-(defmethod export-document :after ((document table-cell) (backend context-backend))
+    (format outstream "\\bTD ")))
+(defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
-    (format outstream "\\eTD")))
+    (format outstream "\\eTD ")))
 
 
 ;;;;;;;;;;;;;;;;;;

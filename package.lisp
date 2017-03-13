@@ -74,7 +74,12 @@
 	   #:guarda
 	   #:pq-format
 	   #:number-format
-	   #:pq-change-unit))
+	   #:pq-change-unit
+	   #:hlinefill
+	   #:title
+	   #:centering
+	   #:big
+	   #:footer))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
