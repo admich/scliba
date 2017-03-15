@@ -119,7 +119,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     `(progn
        (def-authoring-tree ,name (startstop ,@superclass))
        
-       (defmethod export-document ((document ,name) (backend context-backend))
+       (defmethod export-document ((document ,name) (backend mixin-context-backend))
        	 (let ((outstream (backend-outstream backend)))
 	   (format outstream "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
 	   (dolist (tree (slot-value document 'body))
@@ -221,6 +221,38 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;       (dolist (tree bodylist)
 ;; 	(export-document tree backend outstream))))
 
+
+;; counters
+(defparameter *counters* nil)
+
+(defmacro def-counter (name &optional (n 0))
+  (let ((val (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-val))))
+	(inc (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-inc))))
+	(set (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-set)))))
+    `(let ((counter ,n))
+       (defun ,inc (&optional (n 1))
+         (incf counter n))
+       (defun ,val ()
+	   counter)
+       (defun ,set (&optional (n 0))
+         (setf counter n))
+       )))
+
+(def-authoring-tree enumerated)
+(defmacro def-enumerated (name name-str)
+  `(progn
+     (def-authoring-tree ,name (enumerated))
+     (def-counter ,name)
+     (defmacro ,name (arguments &body body)
+       (let ((inc (symbolicate "COUNTER-" ',name "-INC"))
+	     (val (symbolicate "COUNTER-" ',name "-VAL"))
+	     (cl (symbolicate ',name)))
+	 `(progn (,inc)
+		 (bf "asd")
+		 (make-instance ',cl :arguments (list ,@arguments)
+				:body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
+					    ,@body)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part core
 
@@ -303,23 +335,23 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-simple-authoring-tree bf)
 
-(defmethod export-document :before ((document bf) (backend context-backend))
+(defmethod export-document :before ((document bf) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "{\\bf ")))
-(defmethod export-document :after ((document bf) (backend context-backend))
+(defmethod export-document :after ((document bf) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "}")))
 (def-simple-authoring-tree it)
-(defmethod export-document :before ((document it) (backend context-backend))
+(defmethod export-document :before ((document it) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "{\\it ")))
-(defmethod export-document :after ((document it) (backend context-backend))
+(defmethod export-document :after ((document it) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "}")))
 
 
 (def-simple-authoring-tree newpage)
-(defmethod export-document ((document newpage) (backend context-backend))
+(defmethod export-document ((document newpage) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "\\page ")))
 
@@ -329,7 +361,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (def-startstop columns)
 
 (def-authoring-tree newcolumn)
-(defmethod export-document ((document newcolumn) (backend context-backend))
+(defmethod export-document ((document newcolumn) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "~&\\column~%")))
 

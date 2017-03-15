@@ -17,3 +17,6 @@ per usare emacs ho diverse possibilità.
     evitare di rigenerare  l'immagine ma rallentando
     l'avvio dell'eseguibile che però essendo un server inizia una
     volta a sessione.
+
+* scratch toughts
+

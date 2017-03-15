@@ -95,7 +95,9 @@
 ;; (defmethod export-document ((document infoform) (backend autarchy-backend))
 ;;   (export-document (infoform%) backend))
 
-(def-startstop esercizio)
+
+;; (def-startstop esercizio)
+(def-enumerated esercizio "")
 (def-startstop soluzione)
 ;;temp hack I want implement soluzione buffer in lisp
 (defmethod export-document :before ((document soluzione) (backend context-backend))
@@ -117,7 +119,7 @@
   ())
 (defmacro last-sol ()
   `(make-instance 'last-sol))
-(defmethod export-document ((document last-sol) (backend context-backend))
+(defmethod export-document ((document last-sol) (backend mixin-context-backend))
   (let ((outstream (backend-outstream backend)))
     (format outstream "~[A~;B~;C~;D~;E~;F~] " *last-sol*)))
 
@@ -209,10 +211,10 @@
   )
 
 (defvar *i-compito* 0)
-(defun compila-compito (compito &key n (directory *compiti-directory*))
+(defun compila-compito (compito &key n (directory *compiti-directory*) (backend-type 'context-backend))
   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
   (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let ((backend (make-instance 'context-backend :stream stream)))
+    (let ((backend (make-instance backend-type :stream stream)))
       (if n
 	  (let ((*randomize* t))
 	    (format stream "\\starttext~%")
@@ -229,8 +231,8 @@
 ;;   (let ((file (uiop:merge-pathnames* *esercizi-directory* file)))
 ;;     (compila-context file)))
 
-(defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil))
-  (compila-compito file :n n :directory directory)
+(defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil) (backend-type 'context-backend))
+  (compila-compito file :n n :directory directory  :backend-type backend-type)
   (let ((file (uiop:merge-pathnames* directory file))
 	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
     (if soluzioni
@@ -264,4 +266,7 @@
       (export-document (raccolta-esercizi) backend))))
 
 
+#|
+(compila-guarda-compito "esercizi-recupero-ii" :directory *eserciziari-directory* :backend-type 'aut-context-backend)
 
+|#

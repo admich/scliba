@@ -32,7 +32,7 @@
 	   #:context-backend
 	   #:autarchy-backend
 	   #:aut-context-backend
-
+	   #:mixin-context-backend
 	   #:def-authoring-tree
 	   #:def-simple-authoring-tree
 	   #:def-startstop
@@ -79,7 +79,9 @@
 	   #:title
 	   #:centering
 	   #:big
-	   #:footer))
+	   #:footer
+	   #:def-counter
+	   #:def-enumerated))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
