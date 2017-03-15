@@ -4,6 +4,7 @@
 
 (defvar *math* nil)
 (defparameter *debug* nil)
+(defparameter *outstream* t)
 
 ;;; HIGH security issue
 ;; (defun read-file (file)
@@ -61,20 +62,16 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defun export-document-on-string (document backend)
   "return a string"
   (let* ((s (make-string-output-stream))
-	 (tmp (backend-outstream backend)))
-    (setf (backend-outstream backend) s)
+	 (*outstream* s))
     (export-document document backend)
-    (setf (backend-outstream backend) tmp)
     (get-output-stream-string s)))
 
 
 (defmethod export-document ((document t) backend)
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "")))
+  (format *outstream* ""))
 
 (defmethod export-document ((document string) backend)
-    (let ((outstream (backend-outstream backend)))
-      (format outstream  document)))
+  (format *outstream* document))
 
 (defmethod export-document ((document authoring-tree) backend)
   (dolist (tree (slot-value document 'body))
@@ -120,51 +117,29 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
        (def-authoring-tree ,name (startstop ,@superclass))
        
        (defmethod export-document ((document ,name) (backend mixin-context-backend))
-       	 (let ((outstream (backend-outstream backend)))
-	   (format outstream "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
-	   (dolist (tree (slot-value document 'body))
-	     (export-document tree backend))
-	   (format outstream "~&\\stop~A~%" ,namestr))))))
+	 (format *outstream*"~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
+	 (dolist (tree (slot-value document 'body))
+	   (export-document tree backend))
+	 (format *outstream*"~&\\stop~A~%" ,namestr)))))
 
 (defmacro def-startstop (name &optional superclass)
   (let ((namestr (string-downcase (symbol-name name))))
     `(def-startstop% ,name :superclass ,superclass)))
 
-;; (defmacro def-startstop (name &optional superclass)
-;;   (let ((namestr (string-downcase (symbol-name name))))
-;;     `(progn
-;;        (def-authoring-tree ,name (startstop ,@superclass))
-
-;;        (defmethod export-document ((document ,name) (backend context-backend) outstream)
-;;        	 (format outstream "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
-;;        	 (dolist (tree (slot-value document 'body))
-;;        	   (export-document tree backend outstream))
-;;        	 (format outstream "~&\\stop~A~%" ,namestr))
-;;        )))
-
-
-
-
-;; (defclass authoring-document (authoring-tree)
-;;   ()
-;;   (:documentation "Document root"))
 
 (def-authoring-tree authoring-document (authoring-tree) "Document root")
+(defmethod export-document :around ((document authoring-document) backend)
+  (reset-all-counters)
+  (call-next-method)
+  )
+
 (defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~%
+  (format *outstream*"~%
 ~@[\\setupbodyfont[~dpt]~]
 ~@[\\setupinterlinespace[~a]~]
 \\starttext~%" (get-argument document :bodyfont) (get-argument document :interline))
-    (call-next-method)
-    (format outstream "~&\\stoptext~%")))
-;; (defmethod export-document ((document authoring-document) (backend context-backend))
-;;   (let ((outstream (backend-outstream backend))
-;; 	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
-;;     (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
-;;     (dolist (tree (slot-value document 'body))
-;;       (export-document tree backend outstream))
-;;     (format outstream "~&\\stop~A~%" clstr)))
+  (call-next-method)
+  (format *outstream*"~&\\stoptext~%"))
 
 
 
@@ -172,12 +147,11 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ())
 
 (defmethod export-document ((document startstop) (backend context-backend))
-  (let ((outstream (backend-outstream backend))
-	(clstr (string-downcase (symbol-name (class-name (class-of document))))))
-    (format outstream "~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
+  (let ((clstr (string-downcase (symbol-name (class-name (class-of document))))))
+    (format *outstream*"~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
     (dolist (tree (slot-value document 'body))
       (export-document tree backend outstream))
-    (format outstream "~&\\stop~A~%" clstr)))
+    (format *outstream*"~&\\stop~A~%" clstr)))
 
 
 
@@ -189,8 +163,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   ((file :initarg :file)))
 
 (defmethod export-document ((document input-tex) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\component ~A~%" (pathname-name (slot-value document 'file)))))
+  (format *outstream*"\\component ~A~%" (pathname-name (slot-value document 'file))))
 
 (defun input (filename)
   (if (string= "tex" (pathname-type filename))
@@ -233,10 +206,15 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
        (defun ,inc (&optional (n 1))
          (incf counter n))
        (defun ,val ()
-	   counter)
+	 counter)
        (defun ,set (&optional (n 0))
          (setf counter n))
+       (pushnew (cons ',name (list ',inc ',val ',set)) *counters* :key #'car)
        )))
+
+(defun reset-all-counters ()
+  (dolist (x *counters*)
+    (funcall (nth 3 x))))
 
 (def-authoring-tree enumerated)
 (defmacro def-enumerated (name name-str)
@@ -253,13 +231,56 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 				:body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
 					    ,@body)))))))
 
+(defmacro def-enumerated-slave (name master name-str)
+  `(progn
+     (def-authoring-tree ,name (enumerated))
+     (defmacro ,name (arguments &body body)
+       (let (
+	     (val (symbolicate "COUNTER-" ',master "-VAL"))
+	     (cl (symbolicate ',name)))
+	 `(progn 
+		 (bf "asd")
+		 (make-instance ',cl :arguments (list ,@arguments)
+				:body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
+					    ,@body)))))))
+
+
+;; buffer
+(defparameter *buffers* nil)
+(def-authoring-tree buffered)
+(defmethod export-document :around ((document buffered) (backend autarchy-backend))
+  (let ((*outstream* (cdr (assoc (type-of document) *buffers*))))
+    (call-next-method)))
+
+
+(defmacro def-buffer (name)
+  `(pushnew (cons ',name  (make-string-output-stream)) *buffers* :key 'car))
+
+(defmacro def-buffered (name)
+  `(progn
+     (def-buffer ,name)
+     (def-authoring-tree ,name (buffered))))
+
+(defmacro def-enumerated-slave-buffered (name master name-str)
+  `(progn
+     (def-buffer ,name)
+     (def-authoring-tree ,name (enumerated buffered))
+     (defmacro ,name (arguments &body body)
+       (let (
+	     (val (symbolicate "COUNTER-" ',master "-VAL"))
+	     (cl (symbolicate ',name)))
+	 `(progn 
+	    (bf "asd")
+	    (make-instance ',cl :arguments (list ,@arguments)
+			   :body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
+				       ,@body)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part core
 
 (def-authoring-tree par)
 (defmethod export-document :before ((document par) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\par ~@[\\inouter{~a}~]" (export-document-on-string (getf (authoring-tree-arguments document) :tag) backend))))
+  (format *outstream*"~&\\par ~@[\\inouter{~a}~]" (export-document-on-string (getf (authoring-tree-arguments document) :tag) backend)))
 
 (def-startstop framedtext)
 (defmethod initialize-instance :after ((class framedtext) &rest rest)
@@ -269,24 +290,20 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-authoring-tree hline)
 (defmethod export-document ((document hline) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\hairline~%")))
+  (format *outstream*"~&\\hairline~%"))
 
 (def-authoring-tree hlinefill)
 (defmethod export-document ((document hlinefill) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~~\\hrulefill ~~")))
+  (format *outstream*"~~\\hrulefill ~~"))
 
 ;; footnote
 (def-authoring-tree footnote)
 
 (defmethod export-document :before ((document footnote) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\footnote{")))
+  (format *outstream*"\\footnote{"))
 
 (defmethod export-document :after ((document footnote) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "}")))
+  (format *outstream*"}"))
 
 
 ;; (def-authoring-tree title)
@@ -301,26 +318,24 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-simple-authoring-tree centering (authoring-tree) "Center the content")
 (defmethod export-document :around ((document centering) (backend mixin-context-backend))
-  (format (backend-outstream backend) "~&\\midaligned{")
+  (format *outstream* "~&\\midaligned{")
   (call-next-method)
-  (format (backend-outstream backend) "}"))
+  (format *outstream* "}"))
 (def-simple-authoring-tree big)
 (defmethod export-document :around ((document big) (backend mixin-context-backend))
-  (format (backend-outstream backend) "{\\tfb ")
+  (format *outstream* "{\\tfb ")
   (call-next-method)
-  (format (backend-outstream backend) "}"))
+  (format *outstream* "}"))
 (def-authoring-tree section)
 (defvar *section-level* 0)
 (defparameter *section-context-labels* (list "part" "chapter" "section" "subsection" "subsubsection"))
 
 (defmethod export-document :before ((document section) (backend context-backend))
   (incf *section-level*)
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\start~A~@[[~A]~]~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context))))
+  (format *outstream*"~&\\start~A~@[[~A]~]~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context)))
 
 (defmethod export-document :after ((document section) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\stop~A~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context)))
+  (format *outstream*"~&\\stop~A~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context))
   (decf *section-level*))
 
 
@@ -329,31 +344,25 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-startstop itemize)
 (def-authoring-tree item)
-(defmethod export-document :before ((document item) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\item ")))
+(defmethod export-document :before ((document item) (backend mixin-context-backend))
+  (format *outstream*"~&\\item "))
 
 (def-simple-authoring-tree bf)
 
 (defmethod export-document :before ((document bf) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "{\\bf ")))
+  (format *outstream*"{\\bf "))
 (defmethod export-document :after ((document bf) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "}")))
+  (format *outstream*"}"))
 (def-simple-authoring-tree it)
 (defmethod export-document :before ((document it) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "{\\it ")))
+  (format *outstream*"{\\it "))
 (defmethod export-document :after ((document it) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "}")))
+  (format *outstream*"}"))
 
 
 (def-simple-authoring-tree newpage)
 (defmethod export-document ((document newpage) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\page ")))
+  (format *outstream*"\\page "))
 
 (defmacro emph (&rest body)
   `(it ,@body))
@@ -362,8 +371,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-authoring-tree newcolumn)
 (defmethod export-document ((document newcolumn) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\column~%")))
+  (format *outstream*"~&\\column~%"))
 
 
 (def-authoring-tree math)
@@ -375,48 +383,40 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (def-authoring-tree ref)
 (defmethod export-document ((document ref) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\in[~a]" (get-argument document :ref))))
+  (format *outstream*"\\in[~a]" (get-argument document :ref)))
 
 (def-authoring-tree figure)
 (defmethod export-document :before ((document figure) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\placefigure[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption))))
+  (format *outstream*"\\placefigure[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption)))
 (defmethod export-document :after ((document figure) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "}")))
+  (format *outstream*"}"))
 (def-startstop% mpcode :context-name "MPcode")
 
 
 ;;;;TABLE
 (def-authoring-tree table)
 (defmethod export-document :before ((document table) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend))
+  (let (
 	(widths (get-argument document :widths))
 	(frame (get-argument document :frame))
 	)
-    (unless frame (format outstream "~&\\setupTABLE[frame=off]~%"))
+    (unless frame (format *outstream*"~&\\setupTABLE[frame=off]~%"))
     (when widths
       (dotimes (n (length widths))
-	(format outstream "\\setupTABLE[c][~d][width=~a\\textwidth]~%" (+ n 1) (nth n widths))))
-    (format outstream "\\bTABLE~%")))
+	(format *outstream*"\\setupTABLE[c][~d][width=~a\\textwidth]~%" (+ n 1) (nth n widths))))
+    (format *outstream*"\\bTABLE~%")))
 (defmethod export-document :after ((document table) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\eTABLE~%")))
+  (format *outstream*"~&\\eTABLE~%"))
 (def-authoring-tree table-row)
 (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\bTR ")))
+  (format *outstream*"\\bTR "))
 (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\eTR ")))
+  (format *outstream*"\\eTR "))
 (def-authoring-tree table-cell)
 (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\bTD ")))
+  (format *outstream*"\\bTD "))
 (defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\eTD ")))
+  (format *outstream*"\\eTD "))
 
 
 ;;;;;;;;;;;;;;;;;;
@@ -450,21 +450,17 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (def-simple-authoring-tree imath (math))
 
 (defmethod export-document :before ((document imath) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "$")))
+  (format *outstream*"$"))
 (defmethod export-document :after ((document imath) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "$")))
+  (format *outstream*"$"))
 
 (def-authoring-tree phys-n)
 (defmethod export-document  ((document phys-n) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (scliba-f:n outstream (first (authoring-tree-body document)) nil nil)))
+  (scliba-f:n outstream (first (authoring-tree-body document)) nil nil))
 
 (def-startstop formula (math))
 (defmethod export-document :before ((document formula) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref))))
+  (format *outstream*"~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref)))
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -493,8 +489,6 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
       (uiop:run-program  command   :output t))
     ))
 
-;;;;;;;;;;;;;;;;;
-;;;;;;;;;PTNH
 
 
 

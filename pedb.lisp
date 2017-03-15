@@ -29,17 +29,16 @@
 ;;   `(make-instance 'compito :arguments (list ,@arguments) :body (flatten (list ,@body))))
 
 (defmethod export-document :around ((document compito) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "
+  (format *outstream*"
 \\usepath[../..]
 \\project didattica
 ~:[% ~;~]\\enablemode[soluzioni]
 "  (get-argument document :soluzioni))
-    (call-next-method)))
+  (call-next-method))
 
 ;; (defmethod export-document :before ((document compito) (backend context-backend))
 ;;   (let ((outstream (backend-outstream backend)))
-;;     (format outstream "
+;;     (format *outstream*"
 ;; \\usepath[../..]
 ;; \\project didattica
 ;; ~@[\\setupbodyfont[~dpt]~]
@@ -51,36 +50,15 @@
 ;; ~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
 
 (defmethod export-document :before ((document compito) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "
+  (format *outstream*"
 \\compito[title=~A,scuola=none]
 \\makecompitotitle
-~@[\\def\\rfoot{~A}~]"  (get-argument  document :title) (get-argument document :rfoot))))
+~@[\\def\\rfoot{~A}~]"  (get-argument  document :title) (get-argument document :rfoot)))
 
 (defmethod export-document :before ((document compito) (backend aut-context-backend))
   (export-document (footer (:left "" :right (get-argument document :rfoot))) backend)
   (export-document (title (get-argument document :title)) backend))
 
-
-;; (dolist (tree (slot-value document 'body))
-;;   (export-document tree backend outstream))
-
-;; (defmethod export-document :after ((document compito) (backend context-backend))
-;;   (let ((outstream (backend-outstream backend)))
-;;     (format outstream "
-;; % \\doifmode{soluzioni}{\\printsoluzioni}
-;; ")))
-;; (defclass infoform (authoring-tree)
-;;   ())
-;; (defmacro infoform ()
-;;   `(make-instance 'infoform))
-
-;; (def-simple-authoring-tree infoform (authoring-tree) "Form nome e cognome per compiti")
-
-;; (defmethod export-document ((document infoform) (backend context-backend))
-;;   (let ((outstream (backend-outstream backend)))
-;;     (format outstream "
-;; \\infoform~%")))
 
 (defmacro infoform ()
   "Form nome e cognome per compiti"
@@ -98,20 +76,24 @@
 
 ;; (def-startstop esercizio)
 (def-enumerated esercizio "")
-(def-startstop soluzione)
+;; (def-buffered soluzione)
+(def-enumerated-slave-buffered soluzione esercizio "Soluzione ")
+;; (def-startstop soluzione)
+
 ;;temp hack I want implement soluzione buffer in lisp
 (defmethod export-document :before ((document soluzione) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\beginsoluzione~%")))
+  (format *outstream*"~&\\beginsoluzione~%"))
 (defmethod export-document :after ((document soluzione) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~&\\endsoluzione~%")))
+  (format *outstream*"~&\\endsoluzione~%"))
 
 (def-authoring-tree soluzioni)
 (defmethod export-document ((document soluzioni) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "
-\\doifmode{soluzioni}{\\printsoluzioni}~%")))
+  (format *outstream* "
+\\doifmode{soluzioni}{\\printsoluzioni}~%"))
+
+(defmethod export-document ((document soluzioni) (backend autarchy-backend))
+  (format *outstream* "{\\tfc Soluzioni. \\newline~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
+
 
 
 (defparameter *last-sol* nil)
@@ -120,24 +102,19 @@
 (defmacro last-sol ()
   `(make-instance 'last-sol))
 (defmethod export-document ((document last-sol) (backend mixin-context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "~[A~;B~;C~;D~;E~;F~] " *last-sol*)))
+  (format *outstream*"~[A~;B~;C~;D~;E~;F~] " *last-sol*))
 
 (def-authoring-tree verofalso (itemize random-body))
 (defmethod initialize-instance :after ((class verofalso) &rest rest)
   (setf (getf (authoring-tree-arguments class) :context) "a,packed,joinedup"))
 
-
-
-;; (make-instance  ,cl :body ) (vfbox)
 (defmacro verofalso (arguments &body body)
   `(macrolet ((item (arguments &body body) `(make-instance 'item  :arguments (list ,@arguments) :body (flatten (list (vfbox) ,@body)))))
      (make-instance 'verofalso :arguments (list ,@arguments) :body (flatten (list  ,@body)))))
 
 (def-simple-authoring-tree vfbox)
-(defmethod export-document ((document vfbox) (backend context-backend))
-  (let ((outstream (backend-outstream backend)))
-    (format outstream "\\framed[width=1em,strut=yes]{V}\\thinspace\\framed[width=1em,strut=yes]{F}\\thinspace ")))
+(defmethod export-document ((document vfbox) (backend mixin-context-backend))
+  (format *outstream*"\\framed[width=1em,strut=yes]{V}\\thinspace\\framed[width=1em,strut=yes]{F}\\thinspace "))
 
 
 (def-authoring-tree scelte (itemize random-body))
@@ -215,13 +192,14 @@
   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
   (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
     (let ((backend (make-instance backend-type :stream stream)))
-      (if n
-	  (let ((*randomize* t))
-	    (format stream "\\starttext~%")
-	    (dotimes (*i-compito* n)
-	      (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
-	    (format stream "\\stoptext~%"))
-	  (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend)))))
+      (let ((*outstream* (backend-outstream backend)))
+	(if n
+	    (let ((*randomize* t))
+	      (format stream "\\starttext~%")
+	      (dotimes (*i-compito* n)
+		(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
+	      (format stream "\\stoptext~%"))
+	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))))))
 
 ;; (defun compila-context-compito (file &key (directory *compiti-directory*))
 ;;   (let ((file (uiop:merge-pathnames* directory file)))

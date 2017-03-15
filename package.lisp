@@ -81,7 +81,16 @@
 	   #:big
 	   #:footer
 	   #:def-counter
-	   #:def-enumerated))
+	   #:def-enumerated
+	   #:*outstream*
+	   #:*buffers*
+	   #:buffered
+	   #:def-buffer
+	   #:def-buffered
+	   #:def-enumerated-slave
+	   #:def-enumerated-slave-buffered
+	   #:*counters*
+	   #:reset-all-counters))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
