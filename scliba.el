@@ -147,7 +147,7 @@ Letters do not insert themselves; instead, they are commands."
   (interactive)
   (let ((exe (tabulated-list-get-id)))
     (with-current-buffer *pedb-raccolta-buffer*
-      (insert "\"" (subseq exe 0 -5) "\" "))))
+      (insert "\"" (subseq exe 0 -5) "\" \n"))))
 
 ;; (defun exe-add-exercise-component ()
 ;;   (interactive)

@@ -1,22 +1,10 @@
-(defpackage #:scliba-pedb
-  (:use #:cl #:alexandria #:scliba #:antik)
-  (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
- #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
- #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
- #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
- #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
- #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
- #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
- #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
- #:PSI #:KNOTS #:ROTATE)
-  (:nicknames #:pedb))
-
 (in-package #:scliba-pedb)
 
-(defparameter *esercizi-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/exercises/") ; #p"/home/admich/Documenti/scuola/my-didattica/context/esercizi/"
-(defparameter *esercizi-preview-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/preview/")
-(defparameter *compiti-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/compiti/")
-(defparameter *eserciziari-directory* #p"/home/admich/Documenti/scuola/my-didattica/pedb/eserciziari/")
+(defparameter *pedb-directory* #p"/home/admich/Documents/scuola/my-didattica/pedb/")
+(defparameter *esercizi-directory* (uiop:merge-pathnames* #p"exercises/" *pedb-directory*)) ; #p"/home/admich/Documenti/scuola/my-didattica/context/esercizi/"
+(defparameter *esercizi-preview-directory* (uiop:merge-pathnames* #p"preview/" *pedb-directory*))
+(defparameter *compiti-directory* (uiop:merge-pathnames*  #p"compiti/" *pedb-directory*))
+(defparameter *eserciziari-directory* (uiop:merge-pathnames* #p"eserciziari/" *pedb-directory*))
 (defparameter *esercizi-argomenti* '(("Misure" . "mis") ("Rappresentazione" . "rap") ("Vettori" . "vet") ("Forze" . "for") ("Momenti" . "mom")  ("Fluidi" . "fl") ("Cinematica1d" . "cin1") ("Cinematica2d" . "cin2")  ("Dinamica" . "din") ("Energia" . "ener") ("Termologia" . "term") ("Elettrostatica" . "elect") ("Correnti elettriche" . "electcurr"))
   "argomenti")
 
@@ -55,6 +43,17 @@
 \\makecompitotitle
 ~@[\\def\\rfoot{~A}~]"  (get-argument  document :title) (get-argument document :rfoot)))
 
+(defmethod export-document :around ((document compito) (backend aut-context-backend))
+  (format *outstream* "~&\\setuppagenumbering[location=footer]
+\\setuplayout[
+  topspace=1cm,
+  backspace=2cm,
+  width=middle,
+  height=middle,
+  header=0pt]
+")
+  (call-next-method))
+
 (defmethod export-document :before ((document compito) (backend aut-context-backend))
   (export-document (footer (:left "" :right (get-argument document :rfoot))) backend)
   (export-document (title (get-argument document :title)) backend))
@@ -75,16 +74,18 @@
 
 
 ;; (def-startstop esercizio)
-(def-enumerated esercizio "")
+(def-enumerated esercizio :fmt-str "\\inleft{~d}")
 ;; (def-buffered soluzione)
-(def-enumerated-slave-buffered soluzione esercizio "Soluzione ")
+(def-enumerated-slave-buffered soluzione esercizio :fmt-str "~&Soluzione ~d. ")
 ;; (def-startstop soluzione)
 
 ;;temp hack I want implement soluzione buffer in lisp
-(defmethod export-document :before ((document soluzione) (backend context-backend))
-  (format *outstream*"~&\\beginsoluzione~%"))
-(defmethod export-document :after ((document soluzione) (backend context-backend))
+(defmethod export-document :around ((document soluzione) (backend context-backend))
+  (format *outstream*"~&\\beginsoluzione~%")
+  (call-next-method)
   (format *outstream*"~&\\endsoluzione~%"))
+;; (defmethod export-document :after ((document soluzione) (backend context-backend))
+;;   (format *outstream*"~&\\endsoluzione~%"))
 
 (def-authoring-tree soluzioni)
 (defmethod export-document ((document soluzioni) (backend context-backend))
@@ -92,7 +93,7 @@
 \\doifmode{soluzioni}{\\printsoluzioni}~%"))
 
 (defmethod export-document ((document soluzioni) (backend autarchy-backend))
-  (format *outstream* "{\\tfc Soluzioni. \\newline~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
+  (format *outstream* "{\\tfc Soluzioni. ~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
 
 
 
@@ -102,7 +103,7 @@
 (defmacro last-sol ()
   `(make-instance 'last-sol))
 (defmethod export-document ((document last-sol) (backend mixin-context-backend))
-  (format *outstream*"~[A~;B~;C~;D~;E~;F~] " *last-sol*))
+  (format *outstream*"~[A~;B~;C~;D~;E~;F~]~%~% " *last-sol*))
 
 (def-authoring-tree verofalso (itemize random-body))
 (defmethod initialize-instance :after ((class verofalso) &rest rest)
@@ -149,7 +150,7 @@
 
 (defun tutti-esercizi ()
   (remove-if-not (lambda (x) (let ((str (pathname-type x))) (or (string= "tex" str) (string= "lisp" str))))
-		 (fad:list-directory *esercizi-directory*)))
+		 (uiop:directory-files *esercizi-directory*)))
 
 (defun get-esercizio-argomento (ese)
   (second (ppcre:split "-" (pathname-name ese))))
@@ -198,7 +199,8 @@
 	      (format stream "\\starttext~%")
 	      (dotimes (*i-compito* n)
 		(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
-	      (format stream "\\stoptext~%"))
+	      (format stream "\\stoptext~%")
+	      )
 	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))))))
 
 ;; (defun compila-context-compito (file &key (directory *compiti-directory*))
@@ -223,24 +225,21 @@
 
 (defun genera-esercizio-preview (esercizio)
   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let ((backend (make-instance 'context-backend :stream stream)))
+    (let* ((backend (make-instance 'context-backend :stream stream))
+	   (*outstream* (backend-outstream backend)))
       (format stream "\\usepath[../..]~%\\project didattica~%")
       (export-document (read-file (merge-pathnames *esercizi-directory*
 						   (make-pathname :name esercizio :type "lisp"))) backend)
       (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
 				     esercizio)))
-    (compila-context file :mode "soluzioni"))
-  ;; (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-  ;;   (let ((command (format nil "context --purgeall --mode=soluzioni ~a"  file)))
-  ;;     (uiop:run-program  command   :output t))
-    ; (uiop:run-program (list "context" (pathname-name file)) :output t)
-  )
+    (compila-context file :mode "soluzioni")))
 
 (defun pedb-all-exercize ()
   (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let ((*section-level* 1)
-	  (backend (make-instance 'context-backend :stream stream)))
+    (let* ((*section-level* 1)
+	   (backend (make-instance 'context-backend :stream stream))
+	   (*outstream* (backend-outstream backend)))
       (export-document (raccolta-esercizi) backend))))
 
 

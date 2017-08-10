@@ -1,5 +1,5 @@
 ;;;; package.lisp
-
+(in-package #:cl-user)
 (defpackage #:scliba
   (:use #:cl #:alexandria  #:antik ;; #:local-time conflict with antik
 	)
@@ -16,6 +16,7 @@
   (:export #:*math*
 	   #:*debug*
 	   #:*randomize*
+	   #:*top-level-document*
 	   
 	   #:input
 	   #:read-file
@@ -47,6 +48,7 @@
 	   #:par
 	   #:hline
 	   #:footnote
+	   #:book
 	   #:section
 	   #:*section-level*
 	   #:*section-context-labels*
@@ -102,4 +104,28 @@
 	   #:number-scientific-notation
 	   #:pq-format)
   (:nicknames #:scliba-f))
+
+
+(defpackage #:scliba-pedb
+  (:use #:cl #:alexandria #:scliba #:antik)
+  (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
+ #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
+ #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
+ #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
+ #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
+ #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
+ #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
+ #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
+ #:PSI #:KNOTS #:ROTATE)
+  (:nicknames #:pedb)
+  (:export
+   #:*esercizi-directory*
+   #:*compiti-directory*
+   #:*eserciziari-directory*
+   #:*esercizi-preview-directory*))
+
+
+(defpackage #:scliba-ptnh
+  (:use #:cl #:scliba #:pedb)
+  (:nicknames #:ptnh))
 

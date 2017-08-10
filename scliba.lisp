@@ -5,7 +5,7 @@
 (defvar *math* nil)
 (defparameter *debug* nil)
 (defparameter *outstream* t)
-
+(defparameter *top-level-document* t)
 ;;; HIGH security issue
 ;; (defun read-file (file)
 ;;   "Read the file and generate the clos structure of the document.
@@ -30,21 +30,37 @@
 
 (setf *read-default-float-format* 'double-float)
 ; (named-readtables:in-readtable :scribble-antik) ;scribble-both
+;; (defun read-file (file)
+;;   "Read the file and generate the clos structure of the document.
+;; ATTENTION: don't read untrusted file. You read the file with common lisp reader."
+;;   (named-readtables:in-readtable :scribble-antik) ;scribble-both
+;;   (with-open-file (ifile file)
+;;     (eval (read ifile))
+;;     ;; (let ((*readtable* (named-readtables:find-readtable :antik))
+;;     ;; 	  (*read-default-float-format* 'double-float))
+;;     ;;   (eval (read ifile)))
+;;     ))
+
 (defun read-file (file)
   "Read the file and generate the clos structure of the document.
 ATTENTION: don't read untrusted file. You read the file with common lisp reader."
   (named-readtables:in-readtable :scribble-antik) ;scribble-both
   (with-open-file (ifile file)
-    (eval (read ifile))
-    ;; (let ((*readtable* (named-readtables:find-readtable :antik))
-    ;; 	  (*read-default-float-format* 'double-float))
-    ;;   (eval (read ifile)))
-    ))
+    
+    (let ((*default-pathname-defaults* (uiop:truename* file)))
+      (loop for form = (read ifile nil :eof)
+	 with value
+	 until (eq form :eof)
+	 do (setf value (eval form))
+	 finally (return value)))))
 
 (defclass authoring-tree ()
   ((arguments :initarg :arguments
 	      :initform nil
 	      :accessor authoring-tree-arguments)
+   (pre-body :initarg :pre-body
+	     :initform nil
+	     :reader authoring-tree-pre-body)
    (body :initarg :body
 	 :initform nil
 	 :reader authoring-tree-body))
@@ -72,6 +88,14 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (defmethod export-document ((document string) backend)
   (format *outstream* document))
+
+(defmethod export-document ((document list) backend)
+  (dolist (x document)
+    (export-document x backend)))
+
+(defmethod export-document :before ((document authoring-tree) (backend autarchy-backend))
+  (dolist (tree (slot-value document 'pre-body))
+    (export-document tree backend)))
 
 (defmethod export-document ((document authoring-tree) backend)
   (dolist (tree (slot-value document 'body))
@@ -111,16 +135,27 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	    (make-instance  ,cl  :body (flatten (list  ,@body))))))))
 
 
+(defclass startstop (authoring-tree)
+  ())
+
+;; (defmethod export-document ((document startstop) (backend context-backend))
+;;   (let ((clstr (string-downcase (symbol-name (class-name (class-of document))))))
+;;     (format *outstream*"~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
+;;     (dolist (tree (slot-value document 'body))
+;;       (export-document tree backend outstream))
+;;     (format *outstream*"~&\\stop~A~%" clstr)))
+
 (defmacro def-startstop% (name &key superclass context-name)
   (let ((namestr (or context-name (string-downcase (symbol-name name)))))
     `(progn
        (def-authoring-tree ,name (startstop ,@superclass))
        
-       (defmethod export-document ((document ,name) (backend mixin-context-backend))
-	 (format *outstream*"~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
-	 (dolist (tree (slot-value document 'body))
-	   (export-document tree backend))
-	 (format *outstream*"~&\\stop~A~%" ,namestr)))))
+       (defmethod export-document :around ((document ,name) (backend mixin-context-backend))
+		  (format *outstream*"~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
+		  ;; (dolist (tree (slot-value document 'body))
+		  ;;   (export-document tree backend))
+		  (call-next-method)
+		  (format *outstream*"~&\\stop~A~%" ,namestr)))))
 
 (defmacro def-startstop (name &optional superclass)
   (let ((namestr (string-downcase (symbol-name name))))
@@ -143,15 +178,6 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 
-(defclass startstop (authoring-tree)
-  ())
-
-(defmethod export-document ((document startstop) (backend context-backend))
-  (let ((clstr (string-downcase (symbol-name (class-name (class-of document))))))
-    (format *outstream*"~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
-    (dolist (tree (slot-value document 'body))
-      (export-document tree backend outstream))
-    (format *outstream*"~&\\stop~A~%" clstr)))
 
 
 
@@ -179,7 +205,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   "If *randomize* is true choose at random from sequence otherwise return the first element in the list"
   (if *randomize* (random-elt seq) (first-elt seq)))
 
-(defclass random-body (authoring-document)
+(defclass random-body (authoring-tree)
   ())
 
 (defmethod export-document :before ((document random-body) backend)
@@ -216,8 +242,15 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (dolist (x *counters*)
     (funcall (nth 3 x))))
 
-(def-authoring-tree enumerated)
-(defmacro def-enumerated (name name-str)
+(def-authoring-tree enumerated )
+(defmethod export-document :around ((document enumerated) (backend context-backend))
+		  (format *outstream*"~&\\start~A~@[[~A]~]~%" (string-downcase (symbol-name (class-name (class-of document)))) (getf (slot-value document 'arguments) :context))
+		  ;; (dolist (tree (slot-value document 'body))
+		  ;;   (export-document tree backend))
+		  (call-next-method)
+		  (format *outstream*"~&\\stop~A~%" (string-downcase (symbol-name (class-name (class-of document)))) ))
+(defmacro def-enumerated (name &key (fmt-str "~d. "))
+  "Define an enumerated tree. fmt-str is the format string for the title. In the ftm-str must be ~d for the number"
   `(progn
      (def-authoring-tree ,name (enumerated))
      (def-counter ,name)
@@ -226,12 +259,13 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	     (val (symbolicate "COUNTER-" ',name "-VAL"))
 	     (cl (symbolicate ',name)))
 	 `(progn (,inc)
-		 (bf "asd")
+		 
 		 (make-instance ',cl :arguments (list ,@arguments)
-				:body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
-					    ,@body)))))))
+				:pre-body (list (bf (format nil ,,fmt-str (,val)))
+						)
+				:body (list ,@body)))))))
 
-(defmacro def-enumerated-slave (name master name-str)
+(defmacro def-enumerated-slave (name master &key (fmt-str "~d. "))
   `(progn
      (def-authoring-tree ,name (enumerated))
      (defmacro ,name (arguments &body body)
@@ -239,10 +273,11 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	     (val (symbolicate "COUNTER-" ',master "-VAL"))
 	     (cl (symbolicate ',name)))
 	 `(progn 
-		 (bf "asd")
+		 
 		 (make-instance ',cl :arguments (list ,@arguments)
-				:body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
-					    ,@body)))))))
+				:pre-body (list (bf (format nil ,,fmt-str (,val)))
+						)
+				:body (list  ,@body)))))))
 
 
 ;; buffer
@@ -261,7 +296,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
      (def-buffer ,name)
      (def-authoring-tree ,name (buffered))))
 
-(defmacro def-enumerated-slave-buffered (name master name-str)
+(defmacro def-enumerated-slave-buffered (name master &key  (fmt-str "~d. "))
   `(progn
      (def-buffer ,name)
      (def-authoring-tree ,name (enumerated buffered))
@@ -270,13 +305,16 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	     (val (symbolicate "COUNTER-" ',master "-VAL"))
 	     (cl (symbolicate ',name)))
 	 `(progn 
-	    (bf "asd")
+	    
 	    (make-instance ',cl :arguments (list ,@arguments)
-			   :body (list (bf (format nil "~a ~d. " ,,name-str (,val)))
-				       ,@body)))))))
+			   :pre-body (list (bf (format nil ,,fmt-str (,val)))
+					   )
+			   :body  (list  ,@body)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part core
+
+(def-authoring-tree book)
 
 (def-authoring-tree par)
 (defmethod export-document :before ((document par) (backend context-backend))
