@@ -17,3 +17,6 @@
     (finishes (compila-context (standard-output-file sclibafile (make-instance 'aut-context-backend))))
     (finishes (view-pdf (standard-output-file sclibafile (make-instance 'context-backend))))
     (finishes (view-pdf (standard-output-file sclibafile (make-instance 'aut-context-backend))))))
+
+(test all-exercise
+  (finishes (pedb::raccolta-esercizi)))

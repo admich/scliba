@@ -73,11 +73,6 @@
        (table-cell () "Cognome: " (hlinefill ()))
        (table-cell () "Data: " (hlinefill ())))))
 
-;; (defmethod export-document ((document infoform) (backend autarchy-backend))
-;;   (export-document (infoform%) backend))
-
-
-;; (def-startstop esercizio)
 (def-enumerated esercizio) ;"\\inleft{~d}"
 
 (defmethod export-document ((document esercizio) (backend aut-context-backend))
@@ -90,9 +85,19 @@
   (call-next-method)
   (format *outstream*"~&~%"))
 
-;; (def-buffered soluzione)
-(def-enumerated-slave-buffered soluzione esercizio) ;:fmt-str "~&Soluzione ~d. "
-;; (def-startstop soluzione)
+
+(def-enumerated-slave-buffered soluzione esercizio) 
+(defmethod export-document ((document soluzione) (backend aut-context-backend))
+  (format *outstream* "~&Soluzione ~d~%" (enumerated-n document))
+  (call-next-method)
+  (format *outstream*"~&~%"))
+
+(defmethod export-document ((document soluzione) (backend html-backend))
+  (html-output (:div :class "esercizio-head" (:h4 (who:fmt "Soluzione ~d" (enumerated-n document)))))
+  (call-next-method)
+  (format *outstream*"~&~%"))
+
+
 
 ;;temp hack I want implement soluzione buffer in lisp
 (defmethod export-document :around ((document soluzione) (backend context-backend))
