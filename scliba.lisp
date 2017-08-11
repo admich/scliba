@@ -4,8 +4,11 @@
 
 (defvar *math* nil)
 (defparameter *debug* nil)
-(defparameter *outstream* t)
-(defparameter *top-level-document* t)
+(defparameter *outstream* *standard-output*)
+(defparameter *top-level-document* nil)
+
+(defparameter *command-pdf-viewer* "emacsclient -n")
+(defparameter *command-html-viewer* "firefox ") 
 ;;; HIGH security issue
 ;; (defun read-file (file)
 ;;   "Read the file and generate the clos structure of the document.
@@ -28,6 +31,7 @@
 (named-readtables:defreadtable :scribble-antik
   (:fuze :antik :scribble-both))
 
+
 (setf *read-default-float-format* 'double-float)
 ; (named-readtables:in-readtable :scribble-antik) ;scribble-both
 ;; (defun read-file (file)
@@ -46,21 +50,21 @@
 ATTENTION: don't read untrusted file. You read the file with common lisp reader."
   (named-readtables:in-readtable :scribble-antik) ;scribble-both
   (with-open-file (ifile file)
-    
-    (let ((*default-pathname-defaults* (uiop:truename* file)))
+
+    (let ((*default-pathname-defaults* (uiop:truename* file))
+	  (old-package *package*))
       (loop for form = (read ifile nil :eof)
 	 with value
 	 until (eq form :eof)
 	 do (setf value (eval form))
-	 finally (return value)))))
+	 finally
+	   (setf *package* old-package)
+	   (return value)))))
 
 (defclass authoring-tree ()
   ((arguments :initarg :arguments
 	      :initform nil
 	      :accessor authoring-tree-arguments)
-   (pre-body :initarg :pre-body
-	     :initform nil
-	     :reader authoring-tree-pre-body)
    (body :initarg :body
 	 :initform nil
 	 :reader authoring-tree-body))
@@ -93,32 +97,17 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (dolist (x document)
     (export-document x backend)))
 
-(defmethod export-document :before ((document authoring-tree) (backend autarchy-backend))
-  (dolist (tree (slot-value document 'pre-body))
-    (export-document tree backend)))
-
-(defmethod export-document ((document authoring-tree) backend)
-  (dolist (tree (slot-value document 'body))
-    (export-document tree backend)))
+(defmethod export-document ((document authoring-tree) backend) 
+  (let ((*top-level-document* nil))
+    (dolist (tree (slot-value document 'body))
+      (export-document tree backend))))
 
 
 ;;; macro utility
-;;math not work try to backquote the let in defmacro
-;; (defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)))
-;;   `(progn
-;;      (defclass ,name (,@superclass)
-;;        ())
-;;      (defmacro ,name (arguments &body body)
-;;        (let ((cl '',name)
-;; 	     (*math* (if (typep (make-instance ',name) 'math) t nil)))
-;; ;	 (when (typep (make-instance ',name) 'math) (setf *math* t))
-;; 	 `(make-instance  ,cl :arguments (list ,@arguments) :body (flatten (list  ,@body)))
-;; ;	 (when (typep (make-instance ',name) 'math) (setf *math* nil))
-;; 	 ))))
-(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
+(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) &key (slot '()) (documentation "No documentation") )
   `(progn
      (defclass ,name (,@superclass)
-       ()
+       ,slot
        (:documentation ,documentation))
      (defmacro ,name (arguments &body body)
        (let ((cl '',name))
@@ -149,20 +138,22 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (let ((namestr (or context-name (string-downcase (symbol-name name)))))
     `(progn
        (def-authoring-tree ,name (startstop ,@superclass))
-       
+
        (defmethod export-document :around ((document ,name) (backend mixin-context-backend))
-		  (format *outstream*"~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
+		  (format *outstream* "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
 		  ;; (dolist (tree (slot-value document 'body))
 		  ;;   (export-document tree backend))
 		  (call-next-method)
-		  (format *outstream*"~&\\stop~A~%" ,namestr)))))
+		  (format *outstream* "~&\\stop~A~%" ,namestr))
+       (defmethod export-document ((document ,name) (backend html-backend))
+	 (html-output (:div :class ,namestr (call-next-method)))))))
 
 (defmacro def-startstop (name &optional superclass)
   (let ((namestr (string-downcase (symbol-name name))))
     `(def-startstop% ,name :superclass ,superclass)))
 
 
-(def-authoring-tree authoring-document (authoring-tree) "Document root")
+(def-authoring-tree authoring-document (authoring-tree) :documentation "Document root")
 (defmethod export-document :around ((document authoring-document) backend)
   (reset-all-counters)
   (call-next-method)
@@ -242,15 +233,18 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (dolist (x *counters*)
     (funcall (nth 3 x))))
 
-(def-authoring-tree enumerated )
+(def-authoring-tree enumerated (startstop)
+  :slot ((n :initarg :n
+	    :initform 0
+	    :accessor enumerated-n)))
+
 (defmethod export-document :around ((document enumerated) (backend context-backend))
-		  (format *outstream*"~&\\start~A~@[[~A]~]~%" (string-downcase (symbol-name (class-name (class-of document)))) (getf (slot-value document 'arguments) :context))
-		  ;; (dolist (tree (slot-value document 'body))
-		  ;;   (export-document tree backend))
-		  (call-next-method)
-		  (format *outstream*"~&\\stop~A~%" (string-downcase (symbol-name (class-name (class-of document)))) ))
-(defmacro def-enumerated (name &key (fmt-str "~d. "))
-  "Define an enumerated tree. fmt-str is the format string for the title. In the ftm-str must be ~d for the number"
+  (format *outstream* "~&\\start~A~@[[~A]~]~%" (string-downcase (symbol-name (class-name (class-of document)))) (getf (slot-value document 'arguments) :context))
+  (call-next-method)
+  (format *outstream* "~&\\stop~A~%" (string-downcase (symbol-name (class-name (class-of document))))))
+
+(defmacro def-enumerated (name)
+  "Define an enumerated tree. fmt-str is the format string for the title. "
   `(progn
      (def-authoring-tree ,name (enumerated))
      (def-counter ,name)
@@ -261,11 +255,10 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	 `(progn (,inc)
 		 
 		 (make-instance ',cl :arguments (list ,@arguments)
-				:pre-body (list (bf (format nil ,,fmt-str (,val)))
-						)
-				:body (list ,@body)))))))
+				:body (list ,@body)
+				:n (,val)))))))
 
-(defmacro def-enumerated-slave (name master &key (fmt-str "~d. "))
+(defmacro def-enumerated-slave (name master)
   `(progn
      (def-authoring-tree ,name (enumerated))
      (defmacro ,name (arguments &body body)
@@ -275,8 +268,6 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	 `(progn 
 		 
 		 (make-instance ',cl :arguments (list ,@arguments)
-				:pre-body (list (bf (format nil ,,fmt-str (,val)))
-						)
 				:body (list  ,@body)))))))
 
 
@@ -296,7 +287,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
      (def-buffer ,name)
      (def-authoring-tree ,name (buffered))))
 
-(defmacro def-enumerated-slave-buffered (name master &key  (fmt-str "~d. "))
+(defmacro def-enumerated-slave-buffered (name master)
   `(progn
      (def-buffer ,name)
      (def-authoring-tree ,name (enumerated buffered))
@@ -307,8 +298,6 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	 `(progn 
 	    
 	    (make-instance ',cl :arguments (list ,@arguments)
-			   :pre-body (list (bf (format nil ,,fmt-str (,val)))
-					   )
 			   :body  (list  ,@body)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -333,6 +322,8 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (def-authoring-tree hlinefill)
 (defmethod export-document ((document hlinefill) (backend mixin-context-backend))
   (format *outstream*"~~\\hrulefill ~~"))
+(defmethod export-document ((document hlinefill) (backend html-backend))
+  (format *outstream*"_________________"))
 
 ;; footnote
 (def-authoring-tree footnote)
@@ -348,10 +339,10 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defmacro title (string)
   `(centering (bf (big ,string))))
 
-(def-authoring-tree footer (authoring-tree) "the footer of the page")
+(def-authoring-tree footer (authoring-tree) :documentation "the footer of the page")
 
 (defmethod export-document :before ((document footer) (backend aut-context-backend))
-  (format (backend-outstream backend) "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right))
+  (format *outstream* "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right))
   )
 
 (def-simple-authoring-tree centering (authoring-tree) "Center the content")
@@ -445,11 +436,21 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     (format *outstream*"\\bTABLE~%")))
 (defmethod export-document :after ((document table) (backend mixin-context-backend))
   (format *outstream*"~&\\eTABLE~%"))
+
+(defmethod export-document ((document table) (backend html-backend))
+  (html-output
+   (:table (call-next-method))))
+
 (def-authoring-tree table-row)
 (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
   (format *outstream*"\\bTR "))
 (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
   (format *outstream*"\\eTR "))
+
+(defmethod export-document ((document table-row) (backend html-backend))
+  (html-output
+    (:tr (call-next-method))))
+
 (def-authoring-tree table-cell)
 (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
   (format *outstream*"\\bTD "))
@@ -457,6 +458,9 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (format *outstream*"\\eTD "))
 
 
+(defmethod export-document ((document table-cell) (backend html-backend))
+  (html-output
+    (:td (call-next-method))))
 ;;;;;;;;;;;;;;;;;;
 ;;; CAOS make-instance e una funzione *math* gli argomenti sono valutati prima di cambiare *math* nei metodi
 ;;;;;;;;;;;;;;;;;
@@ -504,26 +508,41 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;;;;;;;;;;;;;;;;;;;
 ;;; compile utility os interaction
 ;;;;;;;;;;;;;;;;;
+(defun standard-output-file (file backend)
+  (typecase backend
+    (context-backend (merge-pathnames (merge-pathnames (pathname-name file) "context/prova.tex") file))
+    (aut-context-backend (merge-pathnames (merge-pathnames (pathname-name file) "aut-context/prova.tex") file))
+    (html-backend (merge-pathnames (merge-pathnames (pathname-name file) "html/prova.html") file) )))
+
+
+(defun export-file (file backend)
+  (let ((outfile (standard-output-file file backend))
+	(*top-level-document* t)
+	)
+    (uiop:ensure-all-directories-exist (list outfile))
+    (with-open-file (stream outfile :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (let ((*outstream* stream))
+	(export-document (read-file file) backend)
+	))))
+
+
 (defun compila-context (file &key (mode nil) (output nil))
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
     (let ((command (format nil "context --purgeall ~@[--mode=~a~] ~@[--result=~a~] ~a" mode output file )))
       (uiop:run-program command :output t))))
 
-(defun compila-context-soluzioni (file)
-  (compila-context file :mode "soluzioni")
-  ;; (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-  ;;   (let ((command (format nil "context --purgeall --mode=soluzioni ~a"  file)))
-  ;;     (uiop:run-program  command   :output t))
-  ;;   ; (uiop:run-program (list "context" (pathname-name file)) :output t)
-  ;;   )
-  )
-
-;(defparameter *command-pdf-viewer* "zathura")
-(defparameter *command-pdf-viewer* "emacsclient -n")
-
-(defun guarda (file)
+(defun view-pdf (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-    (let ((command (format nil "~a ~a &" *command-pdf-viewer*  file)))
+    (let* ((file (if (string= "pdf" (pathname-type file))
+		     file
+		     (merge-pathnames (make-pathname :type "pdf") file)))
+	   (command (format nil "~a ~a &" *command-pdf-viewer*  file)))
+      (uiop:run-program  command   :output t))
+    ))
+
+(defun view-html (file)
+  (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
+    (let ((command (format nil "~a ~a &" *command-html-viewer*  file)))
       (uiop:run-program  command   :output t))
     ))
 

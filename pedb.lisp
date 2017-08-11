@@ -11,10 +11,8 @@
 (defparameter *esercizi-tipi* '(("true/false" . "tf") ("choices" . "ch") ("free" . "fr") ("fill" . "fl"))
   "tipi")
 
-(def-authoring-tree compito (authoring-document) "Compito root document")
+(def-authoring-tree compito (authoring-document) :documentation "Compito root document")
 
-;; (defmacro compito (arguments &body body)
-;;   `(make-instance 'compito :arguments (list ,@arguments) :body (flatten (list ,@body))))
 
 (defmethod export-document :around ((document compito) (backend context-backend))
   (format *outstream*"
@@ -23,6 +21,12 @@
 ~:[% ~;~]\\enablemode[soluzioni]
 "  (get-argument document :soluzioni))
   (call-next-method))
+
+(defmethod export-document ((document compito) (backend html-backend))
+  (who:with-html-output (*outstream*)
+			(who:htm (:div :class 'compito
+				       (:h1 (who:str (get-argument document :title)))
+				       (call-next-method)))))
 
 ;; (defmethod export-document :before ((document compito) (backend context-backend))
 ;;   (let ((outstream (backend-outstream backend)))
@@ -74,9 +78,20 @@
 
 
 ;; (def-startstop esercizio)
-(def-enumerated esercizio :fmt-str "\\inleft{~d}")
+(def-enumerated esercizio) ;"\\inleft{~d}"
+
+(defmethod export-document ((document esercizio) (backend aut-context-backend))
+  (format *outstream* "~&\\inleft{~d}~%" (enumerated-n document))
+  (call-next-method)
+  (format *outstream*"~&~%"))
+
+(defmethod export-document ((document esercizio) (backend html-backend))
+  (html-output (:div :class "esercizio-head" (:h4 (who:fmt "Esercizio ~d" (enumerated-n document)))))
+  (call-next-method)
+  (format *outstream*"~&~%"))
+
 ;; (def-buffered soluzione)
-(def-enumerated-slave-buffered soluzione esercizio :fmt-str "~&Soluzione ~d. ")
+(def-enumerated-slave-buffered soluzione esercizio) ;:fmt-str "~&Soluzione ~d. "
 ;; (def-startstop soluzione)
 
 ;;temp hack I want implement soluzione buffer in lisp
@@ -84,8 +99,6 @@
   (format *outstream*"~&\\beginsoluzione~%")
   (call-next-method)
   (format *outstream*"~&\\endsoluzione~%"))
-;; (defmethod export-document :after ((document soluzione) (backend context-backend))
-;;   (format *outstream*"~&\\endsoluzione~%"))
 
 (def-authoring-tree soluzioni)
 (defmethod export-document ((document soluzioni) (backend context-backend))
@@ -164,8 +177,7 @@
 (defun esercizi-di (argomento)
   (remove-if-not (lambda (x) (string= argomento (get-esercizio-argomento x))) (tutti-esercizi)))
 
-(defun raccolta-esercizi ()
-  
+(defun raccolta-esercizi () 
   (let ((*randomize* nil))
     
     (compito (:title "Eserciziario di fisica" :soluzioni t :rfoot (format nil "Compilato \\date\\ \\currenttime"))
@@ -185,8 +197,7 @@
 	     "
 \\doifmode{soluzioni}{\\subject{Soluzioni}
 \\selectblocks[soluzione][criterium=section]}")))
-    )
-  )
+    ))
 
 (defvar *i-compito* 0)
 (defun compila-compito (compito &key n (directory *compiti-directory*) (backend-type 'context-backend))
@@ -218,7 +229,7 @@
     (if soluzioni
 	(compila-context file :mode "soluzioni")
 	(compila-context file))
-    (guarda file-pdf)))
+    (view-pdf file-pdf)))
 
 (defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
   (compila-guarda-compito file :n n :directory directory :soluzioni t))

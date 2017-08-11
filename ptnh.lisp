@@ -22,9 +22,9 @@
   (let ((file (uiop:merge-pathnames* directory file))
 	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
     (compila-context file)
-    (guarda file-pdf)))
+    (view-pdf file-pdf)))
 
-(def-authoring-tree ptnh-document (authoring-document) "ptnh root document")
+(def-authoring-tree ptnh-document (authoring-document) :documentation "ptnh root document")
 
 (def-authoring-tree attenzione)
 

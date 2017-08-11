@@ -73,7 +73,6 @@
 	   #:phys-n
 	   #:formula
 	   #:compila-context
-	   #:guarda
 	   #:pq-format
 	   #:number-format
 	   #:pq-change-unit
@@ -92,7 +91,16 @@
 	   #:def-enumerated-slave
 	   #:def-enumerated-slave-buffered
 	   #:*counters*
-	   #:reset-all-counters))
+	   #:reset-all-counters
+	   #:export-standard-file
+	   #:html-backend
+	   #:view-html
+	   #:view-pdf
+	   #:standard-output-file
+	   #:export-file
+	   #:enumerated
+	   #:enumerated-n
+	   #:html-output))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
