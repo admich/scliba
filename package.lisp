@@ -50,6 +50,9 @@
 	   #:footnote
 	   #:book
 	   #:section
+	   #:counter-section-inc
+	   #:counter-section-set
+	   #:counter-section-val
 	   #:*section-level*
 	   #:*section-context-labels*
 	   #:bf
@@ -79,7 +82,15 @@
 	   #:hlinefill
 	   #:title
 	   #:centering
-	   #:big
+	   ;; #:big
+	   #:tfxx
+	   #:tfx
+	   #:tf
+	   #:tfa
+	   #:tfb
+	   #:tfc
+	   #:tfd
+	   #:tfe
 	   #:footer
 	   #:def-counter
 	   #:def-enumerated
@@ -100,7 +111,11 @@
 	   #:export-file
 	   #:enumerated
 	   #:enumerated-n
-	   #:html-output))
+	   #:html-output
+	   #:*i-random*
+	   #:with-document-argument
+	   #:newline
+	   #:nbsp))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
@@ -113,6 +128,14 @@
 	   #:pq-format)
   (:nicknames #:scliba-f))
 
+(defpackage #:physics
+  (:use #:cl )
+  (:nicknames #:phys)
+  (:export
+   #:bigg
+   #:littleg))
+
+(antik:make-user-package :physics)
 
 (defpackage #:scliba-pedb
   (:use #:cl #:alexandria #:scliba #:antik)
@@ -130,7 +153,8 @@
    #:*esercizi-directory*
    #:*compiti-directory*
    #:*eserciziari-directory*
-   #:*esercizi-preview-directory*))
+   #:*esercizi-preview-directory*
+   #:*mpinclusion*))
 
 
 (defpackage #:scliba-ptnh

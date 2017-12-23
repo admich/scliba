@@ -3,7 +3,7 @@
 (defparameter *pedb-directory* #p"/home/admich/Documents/scuola/my-didattica/pedb/")
 (defparameter *esercizi-directory* (uiop:merge-pathnames* #p"exercises/" *pedb-directory*)) ; #p"/home/admich/Documenti/scuola/my-didattica/context/esercizi/"
 (defparameter *esercizi-preview-directory* (uiop:merge-pathnames* #p"preview/" *pedb-directory*))
-(defparameter *compiti-directory* (uiop:merge-pathnames*  #p"compiti/" *pedb-directory*))
+(defparameter *compiti-directory* (uiop:merge-pathnames*  #p"compiti/file.lisp" *pedb-directory*))
 (defparameter *eserciziari-directory* (uiop:merge-pathnames* #p"eserciziari/" *pedb-directory*))
 (defparameter *esercizi-argomenti* '(("Misure" . "mis") ("Rappresentazione" . "rap") ("Vettori" . "vet") ("Forze" . "for") ("Momenti" . "mom")  ("Fluidi" . "fl") ("Cinematica1d" . "cin1") ("Cinematica2d" . "cin2")  ("Dinamica" . "din") ("Energia" . "ener") ("Termologia" . "term") ("Elettrostatica" . "elect") ("Correnti elettriche" . "electcurr"))
   "argomenti")
@@ -11,6 +11,73 @@
 (defparameter *esercizi-tipi* '(("true/false" . "tf") ("choices" . "ch") ("free" . "fr") ("fill" . "fl"))
   "tipi")
 
+(defparameter *skeleton-compito*
+  "
+(in-package :pedb)
+(compito (:title \"Esercizi sul movimento\"  :rfoot \"MMM. YYYY qNcN (WNN)\")
+  (columns (:context \"n=2, balance=no\")
+    )
+  (soluzioni ()))")
+
+
+(defparameter *mpinclusion*
+  "\\startMPinclusions
+  input metaobj;
+
+  vardef markanglebetween (expr endofa, endofb, common, length, str) =
+        save curve, where ; path curve ; numeric where ;
+        where := turningnumber (common--endofa--endofb--cycle) ;
+        curve := (unitvector(endofa-common){(endofa-common) rotated (where*90)}
+        .. unitvector(endofb-common)) scaled length shifted common ;
+        draw thefreelabel(str,point .5 of curve,common) withcolor black ;
+       curve
+  enddef ;
+
+  u=5mm;
+  def grid(expr xi,xf,yi,yf)=
+    for i=xi+1 upto xf-1:
+      
+      draw (i*u,yi*u)..(i*u,yf*u) withcolor .7white ;
+    endfor
+    for i=yi+1 upto yf-1:
+      draw (xi*u,i*u)..(xf*u,i*u) withcolor .7white;
+    endfor
+  enddef;
+  
+  def assi(expr xi,xf,yi,yf)=
+    drawarrow (xi*u,0)--(xf*u,0);
+    drawarrow (0,yi*u)--(0,yf*u);
+    label.bot(btex $x$ etex, (xf*u,0));
+    label.lft(btex $y$ etex, (0,yf*u));
+  enddef;
+  
+  def labelgriglia(expr xi,xf,yi,yf)=
+    for i=xi+1 upto xf-1:
+      draw (i*u,-2pt)--(i*u,2pt);
+      draw textext(decimal(i)) scaled .8 shifted (i*u-3pt,-5pt);    
+ %     label.llft(decimal(i) infont \"ptmr\" scaled (6pt/fontsize defaultfont), (i*u,0));
+    endfor
+    for i=yi+1 upto yf-1:
+      draw (-2pt,i*u)--(2pt,i*u);
+      draw textext(decimal(i)) scaled .8 shifted (-6pt,i*u+4pt);      
+%      label.llft(decimal(i) infont \"ptmr\" scaled (6pt/fontsize defaultfont), (0,i*u));
+    endfor;
+
+  enddef;
+  def righello(expr strt, stp, btick, stick, meas)=
+    draw (-5+strt*u,0)--(-5+strt*u,-1cm)--(stp*u+5,-1cm)--(stp*u+5,0)--cycle;
+    for i= strt step btick until stp:
+      draw (i*u,0)--(i*u,-0.3cm);
+      label.bot(decimal i,(i*u,-0.3cm));
+    endfor
+    for i=strt step stick until stp:
+      draw (i*u,0)--(i*u,-0.2cm);
+    endfor;
+    label(btex mm etex,((strt+stp)*u/2,-0.8cm));
+    draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
+enddef;
+
+\\stopMPinclusions")
 (def-authoring-tree compito (authoring-document) :documentation "Compito root document")
 
 
@@ -55,7 +122,9 @@
   width=middle,
   height=middle,
   header=0pt]
-")
+"
+	  )
+  (write-string *mpinclusion* *outstream* )
   (call-next-method))
 
 (defmethod export-document :before ((document compito) (backend aut-context-backend))
@@ -65,7 +134,7 @@
 
 (defmacro infoform ()
   "Form nome e cognome per compiti"
-  `(table (:widths '(0.5 0.5) :frame nil)
+  `(table (:widths '(0.5 0.5) :frame nil :stretch t)
      (table-row ()
        (table-cell () "Nome: " (hlinefill ()))
        (table-cell () "Classe: "(hlinefill ())))
@@ -204,20 +273,58 @@
 \\selectblocks[soluzione][criterium=section]}")))
     ))
 
-(defvar *i-compito* 0)
-(defun compila-compito (compito &key n (directory *compiti-directory*) (backend-type 'context-backend))
-  "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
-  (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let ((backend (make-instance backend-type :stream stream)))
-      (let ((*outstream* (backend-outstream backend)))
-	(if n
-	    (let ((*randomize* t))
-	      (format stream "\\starttext~%")
-	      (dotimes (*i-compito* n)
-		(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
-	      (format stream "\\stoptext~%")
-	      )
-	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))))))
+
+;;; 
+
+(defparameter *backends* '(context-backend aut-context-backend html-backend))
+
+(defun compito-lisp-file (name)
+  "return the lisp file for compito"
+  (make-pathname :name name :type "lisp" :directory (pathname-directory *compiti-directory*)))
+
+
+
+(defun export-compito-in-all-backends (compito &key n)
+  "genera all the backends for compito "
+  (loop for backend in *backends*
+     do (export-file (compito-lisp-file compito) (make-instance backend) :n n)))
+
+(defun export-and-view-compito-in-all-backends (compito &key n)
+  (export-compito-in-all-backends compito :n n)
+  (compila-context (standard-output-file (compito-lisp-file compito) 'context-backend))
+  (compila-context (standard-output-file (compito-lisp-file compito) 'aut-context-backend)))
+
+;;;; Skeletons
+(defun new-compito (file)
+  (with-open-file (stream file :direction :output :if-does-not-exist :create)
+    (format stream "~a" *skeleton-compito*))
+  (format nil "~a" file))
+
+
+;;;; Compiling functions
+(defun compila-guarda-compito (document &key n (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'context-backend)))
+  (view-pdf (compila-context
+    (export-file (merge-pathnames document directory) backend :n n))))
+
+;;; old to remove 
+
+;; (defvar *i-compito* 0)
+
+
+
+;; (defun compila-compito (compito &key n (directory *compiti-directory*) (backend-type 'context-backend))
+;;   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
+;;   (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+;;     (let ((backend (make-instance backend-type :stream stream)))
+;;       (let ((*outstream* (backend-outstream backend)))
+;; 	(if n
+;; 	    (let ((*randomize* t))
+;; 	      (format stream "\\starttext~%")
+;; 	      (dotimes (*i-compito* n)
+;; 		(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
+;; 	      (format stream "\\stoptext~%")
+;; 	      )
+;; 	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))))))
 
 ;; (defun compila-context-compito (file &key (directory *compiti-directory*))
 ;;   (let ((file (uiop:merge-pathnames* directory file)))
@@ -227,17 +334,17 @@
 ;;   (let ((file (uiop:merge-pathnames* *esercizi-directory* file)))
 ;;     (compila-context file)))
 
-(defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil) (backend-type 'context-backend))
-  (compila-compito file :n n :directory directory  :backend-type backend-type)
-  (let ((file (uiop:merge-pathnames* directory file))
-	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
-    (if soluzioni
-	(compila-context file :mode "soluzioni")
-	(compila-context file))
-    (view-pdf file-pdf)))
+;; (defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil) (backend-type 'context-backend))
+;;   (compila-compito file :n n :directory directory  :backend-type backend-type)
+;;   (let ((file (uiop:merge-pathnames* directory file))
+;; 	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
+;;     (if soluzioni
+;; 	(compila-context file :mode "soluzioni")
+;; 	(compila-context file))
+;;     (view-pdf file-pdf)))
 
-(defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
-  (compila-guarda-compito file :n n :directory directory :soluzioni t))
+;; (defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
+;;   (compila-guarda-compito file :n n :directory directory :soluzioni t))
 
 (defun genera-esercizio-preview (esercizio)
   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
@@ -260,6 +367,6 @@
 
 
 #|
-(compila-guarda-compito "esercizi-recupero-ii" :directory *eserciziari-directory* :backend-type 'aut-context-backend)
+
 
 |#

@@ -24,23 +24,3 @@
   `(who:with-html-output (*outstream* nil :indent t)
 			 (who:htm ,@body)))
 
-(defmethod export-document :around ((document t) (backend mixin-context-backend))
-  (if *top-level-document*
-      (progn 
-	(format *outstream*
-		"\\starttext~%")
-	(call-next-method)
-	(format *outstream*
-		"~&\\stoptext~%"))
-      (call-next-method)))
-
-(defmethod export-document :around ((document t) (backend html-backend))
-  (if *top-level-document*
-      (who:with-html-output (*outstream* nil :prologue t  :indent t)
-	(:html
-	 (:head
-	  (:meta :charset "UTF-8")
-	  (:title (who:str (get-argument document :title))))
-	 (:body (call-next-method))))
-      (call-next-method)))
-

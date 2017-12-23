@@ -8,53 +8,37 @@
 
 (defvar *pedb-raccolta-buffer* nil "nome file e buffer del compito associato")
 
-;; (defvar *exe-compiti-dir* "/home/admich/Documenti/scuola/my-didattica/pedb/compiti/" "nome del file dove salvare compiti")
-
-;; (defvar *exe-esercitazioni-dir* "/home/admich/Documenti/scuola/my-didattica/pedb/esercitazioni/" "nome del file dove salvare esercitazioni")
-
-
 (defun pedb-esercizi-argomenti ()
   (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-argomenti*"))))))
 (defun pedb-esercizi-tipi ()
   (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-tipi*"))))))
 
-
-
-
-
 (defun pedb-max-num ()
   "return the maximum number of exercize"
   (apply 'max (mapcar (lambda (x) (string-to-number (substring x -9 -4)))  (remove-if-not (lambda (x) (string-match-p "^q-.*.[0-9]\." x)) (directory-files (pedb-store-dir))))))
-
 
 (defun pedb-new-esercizio ()
   (interactive)
   (let* ((argomento (cdr (assoc (completing-read "Argomento: " (pedb-esercizi-argomenti)) (pedb-esercizi-argomenti))))
 	 (tipo (cdr (assoc (completing-read "Tipo: " (pedb-esercizi-tipi)) (pedb-esercizi-tipi))))
 	 (esnum (+ 1 (pedb-max-num)))
-	 (name (format "q-%s-%s-%05d" argomento  tipo esnum))
+	 (name (format "q-%s-%s-%05d" argomento tipo esnum))
 	 (fname (concat name ".lisp")))
     (find-file (expand-file-name fname (pedb-store-dir)))
     (lisp-mode)
     (pcase tipo
       ("ch" (cl-auth-skeleton-esercizio-scelte))
       ;; ("tf" (context-skeleton-esercizio-truefalse))
-      (_ (cl-auth-skeleton-esercizio)))
-    ))
+      (_ (cl-auth-skeleton-esercizio)))))
 
-;; (defun exe-new-compito-lisp ()
-;;   (interactive)
-;;   (let ((fname (read-from-minibuffer "File Name (es: 15-al-i-q1c1.lisp): ")))
-;;     (find-file (expand-file-name fname *exe-lisp-dir*))
-;;     (lisp-mode)
-;;     (cl-auth-skeleton-compito)))
-
-;; (defun exe-new-compito ()
-;;   (interactive)
-;;   (let ((fname (read-from-minibuffer "File Name (es: 15-al-i-q1c1.tex): ")))
-;;     (find-file (expand-file-name fname *exe-compiti-dir*))
-;;     (context-mode)
-;;     (context-skeleton-compito)))
+(defun pedb-new-compito ()
+  (interactive)
+  (let* ((fname (read-from-minibuffer "File Name (es: 15-al-i-q1c1.lisp): "))
+	 (file-to-open
+	  (second (slime-eval `(swank:eval-and-grab-output
+				,(concat "(pedb::new-compito (merge-pathnames \"" fname "\" pedb::*compiti-directory*))"))))))
+    (find-file (read file-to-open))
+    (lisp-mode)))
 
 ;; (defun exe-new-esercitazione ()
 ;;   (interactive)
@@ -63,15 +47,10 @@
 ;;     (context-mode)
 ;;     (context-skeleton-esercitazione)))
 
-
 (defun pedb-all-exercises ()
   "Return all the exercises"
   (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))")))))))
 
-  
-;; (defun exe-all-exercises-with-topic (topic)
-;;   "Return all the exercise of with a given topic"
-;;   (remove-if-not (lambda (x) (string= topic (exe-get-topic x)))(directory-files *exe-store-dir* nil "\\.tex$")))
 
 (defvar pedb-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -82,7 +61,7 @@
     (define-key map "c" 'pedb-genera-esercizio)
     (define-key map "v" 'pedb-view-exercise)
     (define-key map "V" 'pedb-compile-and-view-exercise)
-    ;; (define-key map "N" 'exe-new-compito)
+    (define-key map "N" 'pedb-new-compito)
     (define-key map "s" 'pedb-set-raccolta)
     ;; (define-key map "o" 'exe-open-compilation)
     (define-key map "a" 'pedb-add-esercizio)

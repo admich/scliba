@@ -7,12 +7,15 @@
   :depends-on (#:uiop #:alexandria #:cl-ppcre #:local-time #:scribble #:physical-dimension #:cl-who)
   :serial t
   :components ((:file "package")
+	       (:file "macro")
 	       (:file "backend")
-               (:file "scliba")
+	       (:file "scliba")               
 	       (:file "format")
-	       (:file "formatter") ; to be removed when possible
+	       (:file "formatter")	; to be removed when possible
+	       (:file "physics")
 	       (:file "pedb")
 	       (:file "ptnh")
+	       (:file "itas")
 	       ))
 
 
