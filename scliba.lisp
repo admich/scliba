@@ -116,19 +116,25 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
      (defclass ,name (,@superclass)
        ,slot
        (:documentation ,documentation))
+     
      (defmacro ,name (arguments &body body)
        (let ((cl '',name))
-	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil)))
-	    (make-instance ,cl :arguments (list ,@arguments) :body (flatten (list ,@body))))))))
+     	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil)))
+     	    (make-instance ,cl :arguments (list ,@arguments) :body (flatten (list ,@body))))))
+     ))
 
 (defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
   `(progn
      (defclass ,name (,@superclass)
        ())
-     (defmacro ,name (&body body)
-       (let ((cl '',name))
-	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil)))
-	    (make-instance  ,cl  :body (flatten (list  ,@body))))))))
+     (defun ,name (&rest body)
+       (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
+	 (make-instance ',name :body body)))
+     ;; (defmacro ,name (&body body)
+     ;;   (let ((cl '',name))
+     ;; 	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil)))
+     ;; 	    (make-instance  ,cl  :body (flatten (list  ,@body))))))
+     ))
 
 
 
