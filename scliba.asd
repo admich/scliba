@@ -10,9 +10,9 @@
 	       (:file "macro")
 	       (:file "backend")
 	       (:file "scliba")               
-	       (:file "format")
-	       (:file "formatter")	; to be removed when possible
-	       (:file "physics")
+	       ;; (:file "format")
+	       ;; (:file "formatter")
+	       (:file "physical-quantity")
 	       (:file "pedb")
 	       (:file "ptnh")
 	       (:file "itas")
