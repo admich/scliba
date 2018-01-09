@@ -50,6 +50,7 @@
 	   #:footnote
 	   #:book
 	   #:section
+	   #:section-n
 	   #:counter-section-inc
 	   #:counter-section-set
 	   #:counter-section-val
@@ -58,6 +59,7 @@
 	   #:bf
 	   #:framedtext
 	   #:columns
+	   #:align-right
 	   #:randomize
 	   #:itemize
 	   #:item
@@ -95,6 +97,7 @@
 	   #:def-counter
 	   #:def-enumerated
 	   #:*outstream*
+	   #:*outdirectory*
 	   #:*buffers*
 	   #:buffered
 	   #:def-buffer
@@ -115,7 +118,15 @@
 	   #:*i-random*
 	   #:with-document-argument
 	   #:newline
-	   #:nbsp))
+	   #:nbsp
+	   #:compila-guarda
+	   #:*main-backend*
+	   #:*section-head-fn*
+	   #:roman
+	   #:*section-fonts*
+	   #:sans-serif
+	   #:small-caps
+	   #:section-level))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")

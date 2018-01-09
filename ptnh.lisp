@@ -39,6 +39,16 @@
 
 "))
 
+
+
+(defmethod export-document ((document section) (backend ptnh-mixin-backend))
+  (let* ((newfonts (copy-list *section-fonts*))
+	 (*section-fonts* (loop for i in newfonts collect
+			       (cons 'sans-serif (cdr i)))))
+    (if (eq 0 (section-level document))
+	(export-document (align-right (tfd (small-caps (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title)))) (newline ())) *main-backend*)
+	(funcall (nth (- (length (section-n document)) 2) *section-head-fn*) document))))
+
 (def-authoring-tree ptnh-document (authoring-document) :documentation "ptnh root document")
 
 (defmethod export-document :before ((document ptnh-document) (backend mixin-context-backend))
@@ -69,12 +79,17 @@
 ;;;; Compiler
 
 (defun compila-guarda-formulario (document &key (directory (merge-pathnames "formulari/file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))
-  (view-pdf (compila-context
-    (export-file (merge-pathnames document directory) backend))))
+  (compila-guarda (merge-pathnames document directory) backend)
+  ;; (view-pdf (compila-context
+  ;; 	     (export-file (merge-pathnames document directory) backend)))
+  )
 
 (defun compila-guarda-ptnh (document &key (directory  (merge-pathnames "file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))
-  (view-pdf (compila-context
-	     (export-file (merge-pathnames document directory) backend))))
+  ;; (view-pdf (compila-context
+  ;; 	     (export-file (merge-pathnames document directory) backend)))
+
+   (compila-guarda (merge-pathnames document directory) backend)
+  )
 
 
 ;;;; Old to remove

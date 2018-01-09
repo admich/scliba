@@ -4,6 +4,7 @@
 % + bold + big font.
 
 \startenvironment env_esercizi
+  \usepath[./]
 \mainlanguage[italian]
 \setuppapersize[A4]
 \setuplayout[
@@ -165,8 +166,9 @@ enddef;
 \stopMPinclusions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% esercizi
+
 \startluacode
-require("../esercizi")
+require("./esercizi")
 \stopluacode
 
 \def\var[#1][#2][#3]{\ctxlua{u.#1 = {value=[==[#2]==],svalue='#2',unit=#3}}}

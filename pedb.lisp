@@ -82,11 +82,17 @@ enddef;
 
 
 (defmethod export-document :around ((document compito) (backend context-backend))
-  (format *outstream*"
-\\usepath[../..]
+  (loop for ff in '("tex/didattica.tex" "tex/env_esercizi.tex" "tex/esercizi.lua") do
+       (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
+    		       (make-pathname :name (pathname-name ff) :type (pathname-type ff) :directory *outdirectory*)))
+
+  (format *outstream* "
+% \\usepath[../..]
 \\project didattica
 ~:[% ~;~]\\enablemode[soluzioni]
-"  (get-argument document :soluzioni))
+"
+
+	  (get-argument document :soluzioni))
   (call-next-method))
 
 (defmethod export-document ((document compito) (backend html-backend))
@@ -304,7 +310,8 @@ enddef;
 ;;;; Compiling functions
 (defun compila-guarda-compito (document &key n (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'context-backend)))
   (view-pdf (compila-context
-    (export-file (merge-pathnames document directory) backend :n n))))
+  	     (export-file (merge-pathnames document directory) backend :n n)))
+  )
 
 ;;; old to remove 
 

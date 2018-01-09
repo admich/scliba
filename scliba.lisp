@@ -5,6 +5,7 @@
 (defvar *math* nil)
 (defparameter *debug* nil)
 (defparameter *outstream* *standard-output*)
+(defparameter *outdirectory* "./")
 (defparameter *main-backend* nil)
 (defparameter *top-level-document* nil)
 
@@ -104,7 +105,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 
 
-(defmethod export-document ((document authoring-tree) backend) 
+(defmethod export-document :after ((document authoring-tree) backend) 
   (let ((*top-level-document* nil))
     (dolist (tree (slot-value document 'body))
       (export-document tree backend))))
@@ -486,7 +487,14 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (def-font-size tfe "tfe")
 
 
+;;;; aligned
+(def-simple-authoring-tree align-right)
 
+(defmethod export-document :before ((document align-right) (backend mixin-context-backend))
+  (format *outstream* "{\\rightaligned "))
+
+(defmethod export-document :after ((document align-right) (backend mixin-context-backend))
+  (format *outstream* "}"))
 
 ;; (def-simple-authoring-tree big)
 ;; (defmethod export-document :around ((document big) (backend mixin-context-backend))
@@ -504,6 +512,9 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
       :initform '(1)
       :accessor section-n)))
 
+(defun section-level (section)
+  (- (length (section-n section)) 2))
+
 (defmacro section (arguments &body body)
   `(progn
      (counter-section-inc)
@@ -519,9 +530,26 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
   (setf (getf (authoring-tree-arguments class) :context) (format nil "title=~A" (getf (authoring-tree-arguments class) :title))))
 
 
-(defmethod export-document :before ((document section) (backend autarchy-backend))
+(defparameter *section-fonts* '((roman tfd bf) (roman tfc bf) (roman tfb bf) (roman tfa bf) (roman tf bf)))
+
+
+(defparameter *section-head-fn*
+  (loop for n upto 4
+     collect
+       (lambda (document)
+	 (let* ((font-list (nth (- (length (section-n document)) 2) *section-fonts*))
+		(font-fn (compose (first font-list) (second font-list) (third font-list))))
 	   (export-document
-	    (tfb (bf (newline ()) (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))) (newline ())) *main-backend*))
+	    (funcall font-fn (nbsp ) (newline ())  (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))  (newline ()) (nbsp )) *main-backend*)))))
+
+
+
+(defmethod export-document ((document section) (backend autarchy-backend))
+  (funcall (nth (1- (length (section-n document))) *section-head-fn*) document)
+  ;; (let ((level-size '(tfd tfc tfb tfa tf)))
+  ;;   (export-document
+  ;;    (funcall (nth (1- (length (section-n document))) level-size) (bf (newline ()) (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))) (newline ())) *main-backend*))
+  (call-next-method))
 
 ;; (def-authoring-tree section (authoring-document) :slot (list (n :initarg :n
 ;; 								:initform '(1)
@@ -548,9 +576,10 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree itemize)
 
-(defmethod export-document  ((document itemize) (backend mixin-context-backend))
-  (format *outstream* "~&\\startitemize~@[[~A]~]~%"  (getf (slot-value document 'arguments) :context))
-  (call-next-method)
+(defmethod export-document :before ((document itemize) (backend mixin-context-backend))
+  (format *outstream* "~&\\startitemize~@[[~A]~]~%" (getf (slot-value document 'arguments) :context)))
+
+(defmethod export-document  :after ((document itemize) (backend mixin-context-backend))
   (format *outstream* "~&\\stopitemize~%"))
 
 
@@ -565,10 +594,29 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
   (format *outstream*"{\\bf "))
 (defmethod export-document :after ((document bf) (backend mixin-context-backend))
   (format *outstream*"}"))
+
 (def-simple-authoring-tree it)
 (defmethod export-document :before ((document it) (backend mixin-context-backend))
   (format *outstream*"{\\it "))
 (defmethod export-document :after ((document it) (backend mixin-context-backend))
+  (format *outstream*"}"))
+
+(def-simple-authoring-tree roman)
+(defmethod export-document :before ((document roman) (backend mixin-context-backend))
+  (format *outstream*"{\\rm "))
+(defmethod export-document :after ((document roman) (backend mixin-context-backend))
+  (format *outstream*"}"))
+
+(def-simple-authoring-tree sans-serif)
+(defmethod export-document :before ((document sans-serif) (backend mixin-context-backend))
+  (format *outstream*"{\\ss "))
+(defmethod export-document :after ((document sans-serif) (backend mixin-context-backend))
+  (format *outstream*"}"))
+
+(def-simple-authoring-tree small-caps)
+(defmethod export-document :before ((document small-caps) (backend mixin-context-backend))
+  (format *outstream*"{\\sc "))
+(defmethod export-document :after ((document small-caps) (backend mixin-context-backend))
   (format *outstream*"}"))
 
 
@@ -609,9 +657,11 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree mpcode)
 
-(defmethod export-document  ((document mpcode) (backend mixin-context-backend))
+(defmethod export-document :before  ((document mpcode) (backend mixin-context-backend))
   (format *outstream* "~&\\startMPcode~%")
-  (call-next-method)
+  )
+
+(defmethod export-document :after  ((document mpcode) (backend mixin-context-backend))
   (format *outstream* "~&\\stopMPcode~%")
   )
 
@@ -744,24 +794,23 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (defun export-file (file backend &key n)
   (let ((outfile (standard-output-file file backend))
-	(*top-level-document* t)
-	)
+	(*top-level-document* t))
     (uiop:ensure-all-directories-exist (list outfile))
     (with-open-file (stream outfile :direction :output :if-exists :supersede :if-does-not-exist :create)
-      (let ((*outstream* stream))
+      (let ((*outstream* stream)
+	    (*outdirectory* (pathname-directory outfile)))
 	(if n
 	    (let ((*randomize* t))
 	      (export-document
 	       (authoring-document ()
-		   (loop for *i-random* upto (1- n)
-		      collect (read-file file)))
-	        backend)
+		 (loop for *i-random* upto (1- n)
+		    collect (read-file file)))
+	       backend)
 	      ;; (dotimes (*i-random* n)
 	      ;; 	(export-document (read-file file) backend)
 	      ;; 	)
 	      )
-	    (export-document (read-file file) backend))
-	))
+	    (export-document (read-file file) backend))))
     outfile))
 
 
@@ -789,6 +838,9 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
       (uiop:run-program  command   :output t))
     ))
 
+(defun compila-guarda (filelisp backend)
+   (funcall (compose (backend-view-fn backend) (backend-compile-fn backend)) filelisp  backend)
+  )
 
 
 
