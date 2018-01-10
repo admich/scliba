@@ -151,9 +151,15 @@ enddef;
 (def-enumerated esercizio) ;"\\inleft{~d}"
 
 (defmethod export-document ((document esercizio) (backend aut-context-backend))
-  (format *outstream* "~&\\inleft{~d}~%" (enumerated-n document))
-  (call-next-method)
-  (format *outstream*"~&~%"))
+  ;; (format *outstream* "~&\\inleft{~d}~%" (enumerated-n document))
+  (format *outstream* "~&{\\bf ~d.} " (enumerated-n document))
+  ;; (call-next-method)
+  ;; (format *outstream*"~&~%")
+  )
+
+(defmethod export-document :after ((document esercizio) (backend aut-context-backend))
+  (format *outstream*"~&~%")
+  )
 
 (defmethod export-document ((document esercizio) (backend html-backend))
   (html-output (:div :class "esercizio-head" (:h4 (who:fmt "Esercizio ~d" (enumerated-n document)))))
