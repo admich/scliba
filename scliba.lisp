@@ -640,10 +640,11 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (defclass mixin-math ()
   ())
 ;;; maybe a counter for *math* in case of nested math environment
-(defmethod export-document :before ((document mixin-math) backend)
-  (setf *math* t))
-(defmethod export-document :after ((document mixin-math) backend)
-  (setf *math* nil))
+(defmethod export-document :around ((document mixin-math) backend)
+  (let ((*math* t))
+    (call-next-method)
+    ))
+
 
 (def-authoring-tree ref)
 (defmethod export-document ((document ref) (backend context-backend))

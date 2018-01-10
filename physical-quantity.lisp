@@ -123,4 +123,5 @@
 			    (number-format% num :precision precision :exponent exponent)
 			    (or (not unit) (string= unit (print-unit :degree)))
 			    unit)))
-	  (if *math* str (concatenate 'string "$" str "$")))))))
+	  (unless *math* (setf str (concatenate 'string "$" str "$")))
+	  (format *outstream* "~a" str))))))
