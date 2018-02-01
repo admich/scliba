@@ -24,6 +24,7 @@
 	   #:authoring-tree
 	   #:authoring-tree-arguments
 	   #:authoring-tree-body
+	   #:authoring-tree-parent
 	   #:get-argument
 	   #:export-document
 	   #:export-document-on-string
@@ -126,7 +127,10 @@
 	   #:*section-fonts*
 	   #:sans-serif
 	   #:small-caps
-	   #:section-level))
+	   #:section-level
+	   #:*default-backend*
+	   #:compila
+	   #:*current-node*))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")
@@ -165,7 +169,11 @@
    #:*compiti-directory*
    #:*eserciziari-directory*
    #:*esercizi-preview-directory*
-   #:*mpinclusion*))
+   #:*mpinclusion*
+   #:new-compito
+   #:pedb-all-exercize
+   #:tutti-esercizi
+   #:compila-esercizio-preview))
 
 
 (defpackage #:scliba-ptnh

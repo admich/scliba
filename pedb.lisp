@@ -78,10 +78,12 @@
 enddef;
 
 \\stopMPinclusions")
-(def-authoring-tree compito (authoring-document) :documentation "Compito root document")
+
+(def-authoring-tree pedb-document (authoring-document) :documentation "A pebb root document")
+(def-authoring-tree compito (pedb-document) :documentation "Compito root document")
 
 
-(defmethod export-document :around ((document compito) (backend context-backend))
+(defmethod export-document :around ((document pedb-document) (backend context-backend))
   (loop for ff in '("tex/didattica.tex" "tex/env_esercizi.tex" "tex/esercizi.lua") do
        (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
     		       (make-pathname :name (pathname-name ff) :type (pathname-type ff) :directory *outdirectory*)))
@@ -148,7 +150,7 @@ enddef;
        (table-cell () "Cognome: " (hlinefill ()))
        (table-cell () "Data: " (hlinefill ())))))
 
-(def-enumerated esercizio) ;"\\inleft{~d}"
+(def-enumerated esercizio (pedb-document)) ;"\\inleft{~d}"
 
 (defmethod export-document ((document esercizio) (backend aut-context-backend))
   ;; (format *outstream* "~&\\inleft{~d}~%" (enumerated-n document))
@@ -158,8 +160,8 @@ enddef;
   )
 
 (defmethod export-document :after ((document esercizio) (backend aut-context-backend))
-  (format *outstream*"~&~%")
-  )
+  (format *outstream* "~&\\blank~%~%"))
+
 
 (defmethod export-document ((document esercizio) (backend html-backend))
   (html-output (:div :class "esercizio-head" (:h4 (who:fmt "Esercizio ~d" (enumerated-n document)))))
@@ -169,7 +171,7 @@ enddef;
 
 (def-enumerated-slave-buffered soluzione esercizio) 
 (defmethod export-document ((document soluzione) (backend aut-context-backend))
-  (format *outstream* "~&Soluzione ~d~%" (enumerated-n document))
+  (format *outstream* "~&~%{\\bf Soluzione ~d}~%" (enumerated-n document))
   (call-next-method)
   (format *outstream*"~&~%"))
 
@@ -177,8 +179,6 @@ enddef;
   (html-output (:div :class "esercizio-head" (:h4 (who:fmt "Soluzione ~d" (enumerated-n document)))))
   (call-next-method)
   (format *outstream*"~&~%"))
-
-
 
 ;;temp hack I want implement soluzione buffer in lisp
 (defmethod export-document :around ((document soluzione) (backend context-backend))
@@ -188,13 +188,10 @@ enddef;
 
 (def-authoring-tree soluzioni)
 (defmethod export-document ((document soluzioni) (backend context-backend))
-  (format *outstream* "
-\\doifmode{soluzioni}{\\printsoluzioni}~%"))
+  (format *outstream* "~&{\\printsoluzioni}~%"))
 
 (defmethod export-document ((document soluzioni) (backend autarchy-backend))
   (format *outstream* "{\\tfc Soluzioni. ~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
-
-
 
 (defparameter *last-sol* nil)
 (defclass last-sol (authoring-tree)
@@ -208,6 +205,8 @@ enddef;
 (defmethod initialize-instance :after ((class verofalso) &rest rest)
   (setf (getf (authoring-tree-arguments class) :context) "a,packed,joinedup"))
 
+
+;; ;aggiustare parent
 (defmacro verofalso (arguments &body body)
   `(macrolet ((item (arguments &body body) `(make-instance 'item  :arguments (list ,@arguments) :body (flatten (list (vfbox) ,@body)))))
      (make-instance 'verofalso :arguments (list ,@arguments) :body (flatten (list  ,@body)))))
@@ -316,8 +315,31 @@ enddef;
 ;;;; Compiling functions
 (defun compila-guarda-compito (document &key n (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'context-backend)))
   (view-pdf (compila-context
-  	     (export-file (merge-pathnames document directory) backend :n n)))
-  )
+	     (export-file (merge-pathnames document directory) backend :n n))))
+
+(defmethod export-document :after ((document esercizio) backend)
+  (unless (authoring-tree-parent document)
+    (format *outstream* (export-document-on-string (soluzioni ()) backend))))
+
+(defun compila-esercizio-preview (document &key (backend *default-backend*))
+  (compila document backend))
+
+
+;; (defun genera-esercizio-preview (esercizio)
+;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+;;     (let* ((backend (make-instance 'context-backend :stream stream))
+;; 	   (*outstream* (backend-outstream backend)))
+;;       (format stream "\\usepath[../..]~%\\project didattica~%")
+;;       (export-document (read-file (merge-pathnames *esercizi-directory*
+;; 						   (make-pathname :name esercizio :type "lisp"))) backend)
+;;       (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
+;;   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
+;; 				     esercizio)))
+;;     (compila-context file :mode "soluzioni")))
+
+
+;; (defun compila-esercizio-preview (document &key (backend *default-backend*))
+;;   (compila document backend))
 
 ;;; old to remove 
 
@@ -359,24 +381,24 @@ enddef;
 ;; (defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
 ;;   (compila-guarda-compito file :n n :directory directory :soluzioni t))
 
-(defun genera-esercizio-preview (esercizio)
-  (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let* ((backend (make-instance 'context-backend :stream stream))
-	   (*outstream* (backend-outstream backend)))
-      (format stream "\\usepath[../..]~%\\project didattica~%")
-      (export-document (read-file (merge-pathnames *esercizi-directory*
-						   (make-pathname :name esercizio :type "lisp"))) backend)
-      (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
-  (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
-				     esercizio)))
-    (compila-context file :mode "soluzioni")))
+;; (defun genera-esercizio-preview (esercizio)
+;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
+;;     (let* ((backend (make-instance 'context-backend :stream stream))
+;; 	   (*outstream* (backend-outstream backend)))
+;;       (format stream "\\usepath[../..]~%\\project didattica~%")
+;;       (export-document (read-file (merge-pathnames *esercizi-directory*
+;; 						   (make-pathname :name esercizio :type "lisp"))) backend)
+;;       (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
+;;   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
+;; 				     esercizio)))
+;;     (compila-context file :mode "soluzioni")))
 
-(defun pedb-all-exercize ()
-  (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (let* ((*section-level* 1)
-	   (backend (make-instance 'context-backend :stream stream))
-	   (*outstream* (backend-outstream backend)))
-      (export-document (raccolta-esercizi) backend))))
+;; (defun pedb-all-exercize ()
+;;   (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
+;;     (let* ((*section-level* 1)
+;; 	   (backend (make-instance 'context-backend :stream stream))
+;; 	   (*outstream* (backend-outstream backend)))
+;;       (export-document (raccolta-esercizi) backend))))
 
 
 #|

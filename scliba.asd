@@ -8,8 +8,9 @@
   :serial t
   :components ((:file "package")
 	       (:file "macro")
+	       (:file "scliba")               	       
 	       (:file "backend")
-	       (:file "scliba")               
+	       (:file "base")
 	       ;; (:file "format")
 	       ;; (:file "formatter")
 	       (:file "physical-quantity")

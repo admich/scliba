@@ -49,7 +49,12 @@
 
 (defun pedb-all-exercises ()
   "Return all the exercises"
-  (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))")))))))
+  (first  (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))")))))
+  ;; (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))"))))))
+  )
+
+
+
 
 
 (defvar pedb-list-mode-map
@@ -120,7 +125,7 @@ Letters do not insert themselves; instead, they are commands."
 (defun exe-edit-exercise ()
   (interactive)
   (message "%s" (tabulated-list-get-id))
-  (find-file-other-window (concat (pedb-store-dir) (tabulated-list-get-id))))
+  (find-file-other-window (tabulated-list-get-id)))
 
 (defun pedb-add-esercizio ()
   (interactive)
@@ -128,43 +133,44 @@ Letters do not insert themselves; instead, they are commands."
     (with-current-buffer *pedb-raccolta-buffer*
       (insert "\"" (subseq exe 0 -5) "\" \n"))))
 
-;; (defun exe-add-exercise-component ()
-;;   (interactive)
-;;   (let ((exe (tabulated-list-get-id)))
-;;     (with-current-buffer *exe-compilation-buffer*
-;;       (insert "\n\\component " (subseq exe 0 -4)))))
-
 
 (defun pedb-genera-esercizio ()
   (interactive)
-  (let ((comand (concat "(pedb::genera-esercizio-preview \"" (file-name-base (tabulated-list-get-id)) "\")")))
-;    (message comand)
+  (let ((comand
+	 (concat "(pedb:compila-esercizio-preview \"" (tabulated-list-get-id) "\")")))
+
     (slime-eval `(swank:eval-and-grab-output ,comand))
     (message "Compilato esercizio %s" (tabulated-list-get-id))))
-    ;(slime-eval '(swank:eval-and-grab-output comand))))
+
 
 (defun pedb-view-exercise ()
   (interactive)
-  (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-    (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
-    (if (file-exists-p pdf)
-	(save-excursion (find-alternate-file-other-window pdf))
-      (message "pdf non presente"))))
+  (let ((command (concat "(funcall (scliba::backend-view-fn scliba:*default-backend*) (scliba:standard-output-file \"" (tabulated-list-get-id) "\" scliba:*default-backend*))")))
+    (slime-eval `(swank:eval-and-grab-output ,command))))
+  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
+  ;;   (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
+  ;;   (if (file-exists-p pdf)
+  ;; 	(save-excursion (find-alternate-file-other-window pdf))
+  ;;     (message "pdf non presente")))
+  
 
 (defun pedb-compile-and-view-exercise ()
   (interactive)
   (save-excursion (pedb-genera-esercizio))
-  (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-    (if (file-exists-p pdf)
-	(save-excursion (find-alternate-file-other-window pdf))
-      (message "pdf non presente"))))
+  (pedb-view-exercise)
+  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
+  ;;   (if (file-exists-p pdf)
+  ;; 	(save-excursion (find-alternate-file-other-window pdf))
+  ;;     (message "pdf non presente")))
+  )
 
 (defun pedb-esercizio--print-info (exe)
-  (list exe `[,(pedb-exe-get-number exe)
-	      ,(file-name-base exe)			;	      ,(list (file-name-base exe))
-	      ,(pedb-exe-get-topic exe)
-	      ,(pedb-exe-get-type exe)
-	      ,(pedb-exe-get-modified exe)]))
+  (let ((exe-name (file-name-base exe)))
+    (list exe `[,(pedb-exe-get-number exe-name)
+		,(file-name-base exe) ;	      ,(list (file-name-base exe))
+		,(pedb-exe-get-topic exe-name)
+		,(pedb-exe-get-type exe-name)
+		,(pedb-exe-get-modified exe)])))
 
 (defun pedb-show-db ()
   "Dispay exercize"

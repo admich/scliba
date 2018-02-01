@@ -2,6 +2,9 @@
 (in-package #:scliba-gui)
 
 (defparameter *pedb* (make-hash-table))
+
+; (define-gesture-name :compile :pointer-button-press (:left :shift))
+
 (defclass scliba-document ( )
   ()
   (:documentation "general scliba-document"))
@@ -160,6 +163,24 @@
 (define-scliba-gui-command (com-preview-exercise :name t :menu t)
     ((exe 'scliba-exercise-document :prompt "Esercizio"))  
   (setf  (stream-default-view (find-pane-named *application-frame* 'main)) (make-instance 'pdf-view :file (pedb-preview-file exe))))
+
+(define-scliba-gui-command (com-edit-exercise :name t :menu t)
+    ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :edit))
+  (climacs:edit-file (document-file exe)))
+
+;; (define-gesture-name :compile :pointer-button-press (:middle :control))
+(define-gesture-name :compile :pointer-button-press (:left :shift))
+
+(define-scliba-gui-command (com-compile-exercise :name t :menu t)
+    ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :compile))
+  (climacs:edit-file (document-file exe)))
+
+(define-scliba-gui-command (com-new-compito :name t :menu t)
+  ((file-name 'string :prompt "File name (es: 16-bio-i-q1c1)"))
+  (let ((file (merge-pathnames file-name *compiti-directory*)))
+    (pedb:new-compito file)
+    (format (frame-query-io *application-frame*) "Creato il compito ~a" file)
+    (climacs:edit-file file)))
 
 
 (define-scliba-gui-command (com-filter-exercises :name t :menu t)
