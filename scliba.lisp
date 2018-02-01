@@ -12,40 +12,12 @@
 (defparameter *command-pdf-viewer* "emacsclient -n") ;;emacsclient -n zathura
 (defparameter *command-html-viewer* "firefox ")
 (defparameter *current-node* nil)
-;;; HIGH security issue
-;; (defun read-file (file)
-;;   "Read the file and generate the clos structure of the document.
-;; ATTENTION: don't read untrusted file. You read the file with common lisp reader."
-;;   (let (ret)
-;;     (scribble:enable-scribble-syntax)
-;;     (scribble:enable-scribble-at-syntax)    
-;;     (setf ret (with-open-file (ifile file)
-;; 		(eval (read ifile))))
-;;     (scribble:disable-scribble-syntax)
-;;     (scribble:disable-scribble-at-syntax)
-;;     ret))
-
-					;(scribble:enable-scribble-syntax)
-					;(scribble:enable-scribble-at-syntax)    
-
-;; :merge error n conflict :fuze continue 
 
 (named-readtables:defreadtable :scribble-antik
   (:fuze :antik :scribble-both))
 
 
 (setf *read-default-float-format* 'double-float)
-; (named-readtables:in-readtable :scribble-antik) ;scribble-both
-;; (defun read-file (file)
-;;   "Read the file and generate the clos structure of the document.
-;; ATTENTION: don't read untrusted file. You read the file with common lisp reader."
-;;   (named-readtables:in-readtable :scribble-antik) ;scribble-both
-;;   (with-open-file (ifile file)
-;;     (eval (read ifile))
-;;     ;; (let ((*readtable* (named-readtables:find-readtable :antik))
-;;     ;; 	  (*read-default-float-format* 'double-float))
-;;     ;;   (eval (read ifile)))
-;;     ))
 
 (defun read-file (file)
   "Read the file and generate the clos structure of the document.
@@ -53,7 +25,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (named-readtables:in-readtable :scribble-antik) ;scribble-both
   (with-open-file (ifile file)
 
-    (let (;; (*default-pathname-defaults* (uiop:truename* file))
+    (let ( ;; (*default-pathname-defaults* (uiop:truename* file))
 	  (old-package *package*))
       (loop for form = (read ifile nil :eof)
 	 with value = '()
@@ -88,42 +60,33 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 	       (authoring-document ()
 		 (loop for *i-random* upto (1- n)
 		    collect (read-file file)))
-	       backend)
-	      ;; (dotimes (*i-random* n)
-	      ;; 	(export-document (read-file file) backend)
-	      ;; 	)
-	      )
+	       backend))
 	    (export-document (read-file file) backend))))
     outfile))
 
 
 (defun compila-context (file &key (mode nil) (output nil))
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-    (let ( ;(output (or output (merge-pathnames (make-pathname :type "pdf") file)))
-	   (command (format nil "context --purgeall ~@[--mode=~a~]  ~@[--result=~a~] ~a" mode output file )))
-      (print command)
-      (uiop:run-program command :output t)
-      (or output (merge-pathnames (make-pathname :type "pdf") file))
-      )))	
+			       (let ((command (format nil "context --purgeall ~@[--mode=~a~]  ~@[--result=~a~] ~a" mode output file)))
+				 (print command)
+				 (uiop:run-program command :output t)
+				 (or output (merge-pathnames (make-pathname :type "pdf") file)))))	
 
 (defun view-pdf (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-    (let* ((file (if (string= "pdf" (pathname-type file))
-		     file
-		     (merge-pathnames (make-pathname :type "pdf") file)))
-	   (command (format nil "~a ~a &" *command-pdf-viewer*  file)))
-      (uiop:run-program  command   :output t))
-    ))
+			       (let* ((file (if (string= "pdf" (pathname-type file))
+						file
+						(merge-pathnames (make-pathname :type "pdf") file)))
+				      (command (format nil "~a ~a &" *command-pdf-viewer* file)))
+				 (uiop:run-program command :output t))))
 
 (defun view-html (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-    (let ((command (format nil "~a ~a &" *command-html-viewer*  file)))
-      (uiop:run-program  command   :output t))
-    ))
+			       (let ((command (format nil "~a ~a &" *command-html-viewer* file)))
+				 (uiop:run-program command :output t))))
 
 (defun compila-guarda (filelisp backend)
-   (funcall (compose (backend-view-fn backend) (backend-compile-fn backend)) filelisp  backend)
-  )
+  (funcall (compose (backend-view-fn backend) (backend-compile-fn backend)) filelisp backend))
 
 (defun compila (filelisp backend)
   (funcall (backend-compile-fn backend) filelisp backend))

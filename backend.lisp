@@ -1,4 +1,4 @@
-;;;;; backend.lispback
+;;;;; backend.lisp
 (in-package #:scliba)
 
 (defparameter *default-backend* nil)
@@ -17,8 +17,7 @@
 
 (defmethod initialize-instance :after ((obj mixin-context-backend) &rest rest)
   (setf (backend-view-fn obj) #'view-pdf
-	(backend-compile-fn obj) (compose #'compila-context #'export-file))
-  )
+	(backend-compile-fn obj) (compose #'compila-context #'export-file)))
 
 
 (defclass context-backend (mixin-context-backend) ())

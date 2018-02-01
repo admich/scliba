@@ -51,44 +51,6 @@
     (dolist (tree (slot-value document 'body))
       (export-document tree backend))))
 
-
-
-;;; macro utility
-(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) &key (slot '()) (documentation "No documentation"))
-  `(progn
-     (defclass ,name (,@superclass)
-       ,slot
-       (:documentation ,documentation))
-
-     (defmacro ,name (arguments &body body)
-       (let ((cl '',name))
-	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
-		(tree (make-instance ,cl :arguments (list ,@arguments))))
-	    (let ((*current-node* tree))
-	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
-	      tree))))))
-
-;; (make-instance ,cl :arguments (list ,@arguments) :body (flatten (list ,@body)))
-
-(defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
-  `(progn
-     (defclass ,name (,@superclass)
-       ())
-     ;; (defun ,name (&rest body)
-     ;;   (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
-     ;; 	 (make-instance ',name :body body)))
-     (defmacro ,name (&body body)
-       (let ((cl '',name))
-     	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
-		(tree (make-instance ,cl)))
-	    (let ((*current-node* tree))
-	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
-	      tree)
-     	    )))
-     ))
-
-
-
 (defclass mixin-div-html ()
   ())
 
@@ -98,43 +60,11 @@
 (defclass mixin-startstop-context ()
   ())
 
-;; (defclass startstop (authoring-tree div-html-mixin)
-;;   ())
-
-
 (defmethod export-document :around ((document mixin-startstop-context) (backend mixin-context-backend))
   (let ((namestr (string-downcase (format nil "~a" (type-of document)))))
     (format *outstream* "~&\\start~A~@[[~A]~]~%" namestr (getf (slot-value document 'arguments) :context))
     (call-next-method)
     (format *outstream* "~&\\stop~A~%" namestr)))
-
-
-;; (defmethod export-document ((document startstop) (backend context-backend))
-;;   (let ((clstr (string-downcase (symbol-name (class-name (class-of document))))))
-;;     (format *outstream*"~&\\start~A~@[[~A]~]~%" clstr (getf (slot-value document 'arguments) :context))
-;;     (dolist (tree (slot-value document 'body))
-;;       (export-document tree backend outstream))
-;;     (format *outstream*"~&\\stop~A~%" clstr)))
-
-;; (defmacro def-startstop% (name &key superclass context-name)
-;;   (let ((namestr (or context-name (string-downcase (symbol-name name)))))
-;;     `(progn
-;;        (def-authoring-tree ,name (startstop ,@superclass))
-
-;;        ;; (defmethod export-document :around ((document ,name) (backend mixin-context-backend))
-;;        ;; 		  (format *outstream* "~&\\start~A~@[[~A]~]~%" ,namestr (getf (slot-value document 'arguments) :context))
-;;        ;; 		  ;; (dolist (tree (slot-value document 'body))
-;;        ;; 		  ;;   (export-document tree backend))
-;;        ;; 		  (call-next-method)
-;;        ;; 		  (format *outstream* "~&\\stop~A~%" ,namestr))
-;;        ;; (defmethod export-document ((document ,name) (backend html-backend))
-;;        ;; 	 (html-output (:div :class ,namestr (call-next-method))))
-;;        )))
-
-;; (defmacro def-startstop (name &optional superclass)
-;;   (let ((namestr (string-downcase (symbol-name name))))
-;;     `(def-startstop% ,name :superclass ,superclass)))
-
 
 (def-authoring-tree authoring-document (authoring-tree) :documentation "Document root")
 
@@ -145,12 +75,9 @@
   )
 
 (defmethod export-document :before ((document authoring-document) (backend mixin-context-backend))
-  (format *outstream*"~%
+  (format *outstream* "~%
 ~@[\\setupbodyfont[~dpt]~]
-~@[\\setupinterlinespace[~a]~]~%" (get-argument document :bodyfont) (get-argument document :interline))
-  ;; (call-next-method)
-  ;; (format *outstream*"~&\\stoptext~%")
-  )
+~@[\\setupinterlinespace[~a]~]~%" (get-argument document :bodyfont) (get-argument document :interline)))
 
 (defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
   (if *top-level-document*
@@ -172,28 +99,15 @@
 	 (:body (call-next-method))))
       (call-next-method)))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part utility
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; input
-;; (defclass input-tex (authoring-tree)
-;;   ((file :initarg :file)))
-
-;; (defmethod export-document ((document input-tex) (backend context-backend))
-;;   (format *outstream*"\\component ~A~%" (pathname-name (slot-value document 'file))))
 
 (defun input (filename)
   (if *debug*
-	  (list (read-file filename) (format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name filename)))
-	  (read-file filename))
-  ;; (if (string= "tex" (pathname-type filename))
-  ;;     (make-instance 'input-tex :file filename)
-  ;;     (if *debug*
-  ;; 	  (list (read-file filename) (format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name filename)))
-  ;; 	  (read-file filename)))
-  ) ;; read-file
+      (list (read-file filename) (format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name filename)))
+      (read-file filename))) 
 
 ;; random
 (defparameter *randomize* nil)
@@ -212,50 +126,43 @@
 		   (setf (slot-value document 'body) (shuffle (slot-value document 'body))))))
 
 (def-authoring-tree randomize (random-body))
-;; (defmethod export-document ((document randomize) backend outstream)
-;;   (let ((bodylist (if *randomize* (shuffle (copy-list (slot-value document 'body))) (copy-list (slot-value document 'body)))))
-;;       (dolist (tree bodylist)
-;; 	(export-document tree backend outstream))))
-
 
 ;; counters
 (defparameter *counters* nil)
 
 (defmacro def-counter (name &optional (n 0))
-  (let ((val (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-val))))
-	(inc (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-inc))))
-	(set (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-set)))))
+  (let ((val (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-val))))
+	(inc (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-inc))))
+	(set (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-set)))))
     `(let ((counter ,n))
        (defun ,inc (&optional (delta 1))
-         (incf counter delta))
+	 (incf counter delta))
        (defun ,val ()
 	 counter)
        (defun ,set (&optional (n 0))
-         (setf counter n))
-       (pushnew (cons ',name (list ',inc ',val ',set)) *counters* :key #'car)
-       )))
+	 (setf counter n))
+       (pushnew (cons ',name (list ',inc ',val ',set)) *counters* :key #'car))))
 
 (defmacro def-leveled-counter (name &optional (n '(list 0)))
-  (let ((val (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-val))))
-	(inc (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-inc))))
-	(set (intern (concatenate 'string (symbol-name '#:counter-) (symbol-name name) (symbol-name '#:-set)))))
+  (let ((val (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-val))))
+	(inc (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-inc))))
+	(set (intern (concatenate 'string (symbol-name 'counter-) (symbol-name name) (symbol-name '-set)))))
     `(let ((counter ,n))
        (defun ,inc (&optional (delta 1))
 	 (incf (car counter) delta)
-         (push 0 counter))
+	 (push 0 counter))
        (defun ,val ()
 	 counter)
        (defun ,set (&optional (n (list 0)))
 	 (if (eq n :pop) (pop counter)
 	     (setf counter n)))
-       (pushnew (cons ',name (list ',inc ',val ',set)) *counters* :key #'car)
-       )))
-
-
+       (pushnew (cons ',name (list ',inc ',val ',set)) *counters* :key #'car))))
 
 (defun reset-all-counters ()
   (dolist (x *counters*)
     (funcall (nth 3 x))))
+
+;;;; enumerated
 
 (def-authoring-tree enumerated (authoring-tree mixin-div-html)
   :slot ((n :initarg :n
@@ -283,8 +190,6 @@
 		 (make-instance ',cl :arguments (list ,@arguments)
 				:body (list ,@body)
 				:n (,val)))))))
-
-
 
 
 (defmacro def-enumerated-slave (name master)
@@ -375,17 +280,16 @@
   (format *outstream*"}"))
 
 
-;; (def-authoring-tree title)
 (defmacro title (string)
   `(centering (bf (tfd ,string))))
 
 (def-authoring-tree footer (authoring-tree) :documentation "the footer of the page")
 
 (defmethod export-document :before ((document footer) (backend aut-context-backend))
-  (format *outstream* "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right))
-  )
+  (format *outstream* "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right)))
 
 (def-simple-authoring-tree centering (authoring-tree) "Center the content")
+
 (defmethod export-document :around ((document centering) (backend mixin-context-backend))
   (format *outstream* "~&\\midaligned{")
   (call-next-method)
@@ -453,14 +357,9 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (defmethod export-document :after ((document align-right) (backend mixin-context-backend))
   (format *outstream* "}"))
 
-;; (def-simple-authoring-tree big)
-;; (defmethod export-document :around ((document big) (backend mixin-context-backend))
-;;   (format *outstream* "{\\tfb ")
-;;   (call-next-method)
-;;   (format *outstream* "}"))
-
-
+;;;; sections
 (def-leveled-counter section)
+
 (defclass section (authoring-document)
   ((n :initarg :n
       :initform '(1)
@@ -473,10 +372,8 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (defmacro section (arguments &body body)
   `(progn
      (counter-section-inc)
-     (let*  ((sec (make-instance 'section
-				 :arguments (list ,@arguments)
-				 ;; :body (list ,@body)
-				 )))
+     (let* ((sec (make-instance 'section
+				:arguments (list ,@arguments))))
        (let ((*current-node* sec))
 	 (setf (authoring-tree-body sec) (list ,@body))
 	 (counter-section-set :pop)
@@ -503,16 +400,7 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (defmethod export-document ((document section) (backend autarchy-backend))
   (funcall (nth (1- (length (section-n document))) *section-head-fn*) document)
-  ;; (let ((level-size '(tfd tfc tfb tfa tf)))
-  ;;   (export-document
-  ;;    (funcall (nth (1- (length (section-n document))) level-size) (bf (newline ()) (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))) (newline ())) *main-backend*))
   (call-next-method))
-
-;; (def-authoring-tree section (authoring-document) :slot (list (n :initarg :n
-;; 								:initform '(1)
-;; 								:accessor section-n)))
-
-;; (def-enumerated section (authoring-document))
 
 (defvar *section-level* 0)
 (defparameter *section-context-labels* (list "part" "chapter" "section" "subsection" "subsubsection"))
@@ -526,7 +414,7 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
   (decf *section-level*))
 
 
-
+;;; intemize
 (def-authoring-tree itemize)
 
 (defmethod export-document :before ((document itemize) (backend mixin-context-backend))
@@ -534,8 +422,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (defmethod export-document  :after ((document itemize) (backend mixin-context-backend))
   (format *outstream* "~&\\stopitemize~%"))
-
-
 
 (def-authoring-tree item)
 (defmethod export-document :before ((document item) (backend mixin-context-backend))
@@ -572,7 +458,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (defmethod export-document :after ((document small-caps) (backend mixin-context-backend))
   (format *outstream*"}"))
 
-
 (def-simple-authoring-tree newpage)
 (defmethod export-document ((document newpage) (backend mixin-context-backend))
   (format *outstream*"\\page "))
@@ -581,9 +466,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
   `(it ,@body))
 
 (def-authoring-tree columns (authoring-tree mixin-startstop-context))
-
-;; (defclass columns (authoring-tree mixin-startstop-context)
-;;   ())
 
 (def-authoring-tree newcolumn)
 (defmethod export-document ((document newcolumn) (backend mixin-context-backend))
@@ -621,33 +503,11 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 ;;;;TABLE
 (def-authoring-tree table)
-;; (defmethod export-document :before ((document table) (backend mixin-context-backend))
-;;   (let (
-;; 	(widths (get-argument document :widths))
-;; 	(frame (get-argument document :frame))
-;; 	)
-;;     (unless frame (format *outstream*"~&\\setupTABLE[frame=off]~%"))
-;;     (when widths
-;;       (dotimes (n (length widths))
-;; 	(format *outstream*"\\setupTABLE[c][~d][width=~a\\textwidth]~%" (+ n 1) (nth n widths))))
-;;     (format *outstream*"\\bTABLE~%")))
 
 (defmethod export-document :before ((document table) (backend mixin-context-backend))
   (with-document-argument (frame stretch) document
-    (format *outstream* "~& \\startxtable[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch))
-  ;; (let (
-  ;; 	(widths (get-argument document :widths))
-  ;; 	(frame (get-argument document :frame))
-  ;; 	)
-  ;;   ;; (unless frame (format *outstream*"~&\\setupTABLE[frame=off]~%"))
-  ;;   ;; (when widths
-  ;;   ;;   (dotimes (n (length widths))
-  ;;   ;; 	(format *outstream*"\\setupTABLE[c][~d][width=~a\\textwidth]~%" (+ n 1) (nth n widths))))
-  ;;   (format *outstream* "~& \\startxtable[frame=~:[off~;on~]] ~%" frame))
-  )
+    (format *outstream* "~& \\startxtable[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch)))
 
-;; (defmethod export-document :after ((document table) (backend mixin-context-backend))
-;;   (format *outstream*"~&\\eTABLE~%"))
 (defmethod export-document :after ((document table) (backend mixin-context-backend))
   (format *outstream*"~&\\stopxtable~%"))
 
@@ -656,10 +516,7 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
    (:table (call-next-method))))
 
 (def-authoring-tree table-row)
-;; (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
-;;   (format *outstream*"\\bTR "))
-;; (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
-;;   (format *outstream*"\\eTR~%"))
+
 (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
   (format *outstream*"\\startxrow "))
 (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
@@ -670,13 +527,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
     (:tr (call-next-method))))
 
 (def-authoring-tree table-cell)
-;; (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
-  
-;;   (let ((nc (get-argument document :nc)))
-;;     (format *outstream* "\\bTD~@[[nc=~d]~] " nc)))
-
-;; (defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
-;;   (format *outstream*"\\eTD "))
 
 (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
   
@@ -690,34 +540,7 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (defmethod export-document ((document table-cell) (backend html-backend))
   (html-output
     (:td (call-next-method))))
-;;;;;;;;;;;;;;;;;;
-;;; CAOS make-instance e una funzione *math* gli argomenti sono valutati prima di cambiare *math* nei metodi
-;;;;;;;;;;;;;;;;;
-;; (defmethod initialize-instance :before ((class math) &rest initargs)
-;;   (print "set m")
-;;   (setf *math* t))
 
-;; (defmethod initialize-instance :after ((class math) &rest initargs)
-;;   (print "uset m")
-;;   (setf *math* nil))
-
-
-;; (defmethod export-document :before ((document formula) backend outstream)
-;;   (format t "before formula ~A" *math*))
-;; (defmethod export-document :after ((document formula) backend outstream)
-;;   (format t "after formula ~A" *math*))
-
-;; (defmethod export-document :around ((document formula) backend outstream)
-;;   (format t "around formula ~A~%" *math*)
-;;   (call-next-method))
-
-;; (defmethod export-document :around ((document math) backend outstream)
-;;   (let ((*math* t))
-;;     (call-next-method)))
-
-;; (defmethod initialize-instance :around ((document math) &rest initargs)
-;;   (let ((*math* t))
-;;     (call-next-method)))
 (def-simple-authoring-tree imath (authoring-tree mixin-math))
 
 (defmethod export-document :before ((document imath) (backend mixin-context-backend))
@@ -733,8 +556,4 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (defmethod export-document :before ((document formula) (backend context-backend))
   (format *outstream*"~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref)))
-
-
-
-
 

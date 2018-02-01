@@ -19,6 +19,41 @@
 
 
 
+;;; macro utility
+(defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) &key (slot '()) (documentation "No documentation"))
+  `(progn
+     (defclass ,name (,@superclass)
+       ,slot
+       (:documentation ,documentation))
+
+     (defmacro ,name (arguments &body body)
+       (let ((cl '',name))
+	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
+		(tree (make-instance ,cl :arguments (list ,@arguments))))
+	    (let ((*current-node* tree))
+	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
+	      tree))))))
+
+
+(defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
+  `(progn
+     (defclass ,name (,@superclass)
+       ())
+     ;; (defun ,name (&rest body)
+     ;;   (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
+     ;; 	 (make-instance ',name :body body)))
+     (defmacro ,name (&body body)
+       (let ((cl '',name))
+     	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
+		(tree (make-instance ,cl)))
+	    (let ((*current-node* tree))
+	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
+	      tree)
+     	    )))
+     ))
+
+
+
 
 #|
 (let ((doc (itemize (:a 1 :b 2))))
@@ -31,46 +66,3 @@
 
 |#
 
-
-#|
-
-(defmacro with-slots (slots instance &body body)
-    (let ((in (gensym)))
-      `(let ((,in ,instance))
-         (declare (ignorable ,in))
-         ,@(maybe-rebinding in instance 'with-slots)
-         ,in
-         (symbol-macrolet
-             ,(mapcar (lambda (slot-entry)
-                        (with-current-source-form (slot-entry slots)
-                          (unless (typep slot-entry
-                                         '(or symbol
-                                           (cons symbol (cons symbol null))))
-                            (error "Malformed slot entry: ~s, should be ~
-                                  either a symbol or (variable-name ~
-                                  slot-name)"
-                                   slot-entry))
-                          (destructuring-bind
-                                (var-name &optional (slot-name var-name))
-                              (ensure-list slot-entry)
-                            `(,var-name
-                              (slot-value ,in ',slot-name)))))
-                      slots)
-           ,@body))))
-
-
-
-
-(defmacro with-slots (slot-entries instance-form &body body)
-  (let* ((temp (gensym))
-         (accessors
-          (do ((scan slot-entries (cdr scan))
-               (res))
-              ((null scan) (nreverse res))
-            (if (symbolp (first scan))
-                (push `(,(first scan) (slot-value ,temp ',(first scan))) res)
-                (push `(,(caar scan)
-                         (slot-value ,temp ',(cadar scan))) res)))))
-    `(let ((,temp ,instance-form))
-       (symbol-macrolet ,accessors ,@body))))
-|#

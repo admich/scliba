@@ -40,7 +40,6 @@
 	   #:def-startstop
            
 	   #:choose-one-of
-           
 	   
 	   #:authoring-document
 	   #:startstop
