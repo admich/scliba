@@ -172,7 +172,8 @@
    #:new-compito
    #:pedb-all-exercize
    #:tutti-esercizi
-   #:compila-esercizio-preview))
+   #:compila-esercizio-preview
+   #:*esercizi-argomenti*))
 
 
 (defpackage #:scliba-ptnh

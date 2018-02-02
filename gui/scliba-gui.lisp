@@ -3,8 +3,6 @@
 
 (defparameter *pedb* (make-hash-table))
 
-; (define-gesture-name :compile :pointer-button-press (:left :shift))
-
 (defclass scliba-document ( )
   ()
   (:documentation "general scliba-document"))
@@ -36,7 +34,8 @@
     exe))
 
 (defun pedb-preview-file (exe)
-  (merge-pathnames  (pathname-name (document-file exe)) (merge-pathnames "prova.pdf" *esercizi-preview-directory*))) 
+  (merge-pathnames (make-pathname :type "pdf") (standard-output-file (document-file exe) *default-backend*)))
+
 
 (defun push-exercise (exercise)
   (setf (gethash (document-file exercise) *pedb*) exercise))
@@ -80,7 +79,8 @@
 
 
 (define-application-frame scliba-gui ()
-  ()
+  ((%filter-criteria :accessor filter-criteria
+	       :initform nil))
   (:menu-bar t)
   (:panes
    (list :application
@@ -134,7 +134,7 @@
 	  (multiple-value-bind (x y) (stream-cursor-position pane)
 	    (draw-pattern* pane pattern x y)
 	    (stream-increment-cursor-position pane 0 (pattern-height pattern)))))
-      (write-string "no pdf file" pane))))
+      (format pane "no pdf file: ~a" file))))
   
 
 (defun display-list (frame pane)
@@ -143,9 +143,13 @@
 (defun list-exercises (frame pane &key (directory *esercizi-directory*))
   (formatting-table (pane :x-spacing 50)
     (loop for exe being the hash-value of *pedb* do
-
-	 (present exe 'scliba-exercise-document :stream pane :view +tabular-view+)))
+	 (when (exe-match-criteria exe)
+	   (present exe 'scliba-exercise-document :stream pane :view +tabular-view+))))
   (format pane "~%"))
+
+(defun exe-match-criteria (exe)
+  (if (filter-criteria *application-frame*)
+      (equal (filter-criteria *application-frame*) (exercise-subject exe)) t))
 
 (defun display-button (frame pane)
   (let ((medium (sheet-medium pane)))
@@ -158,22 +162,22 @@
     ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :select))
   (setf  (stream-default-view (find-pane-named *application-frame* 'main)) (make-instance 'file-view :file (document-file exe))))
 
-
+(define-gesture-name :view :pointer-button-press (:middle :control))
 
 (define-scliba-gui-command (com-preview-exercise :name t :menu t)
-    ((exe 'scliba-exercise-document :prompt "Esercizio"))  
+    ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :view))  
   (setf  (stream-default-view (find-pane-named *application-frame* 'main)) (make-instance 'pdf-view :file (pedb-preview-file exe))))
 
 (define-scliba-gui-command (com-edit-exercise :name t :menu t)
     ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :edit))
   (climacs:edit-file (document-file exe)))
 
-;; (define-gesture-name :compile :pointer-button-press (:middle :control))
-(define-gesture-name :compile :pointer-button-press (:left :shift))
+(define-gesture-name :compile :pointer-button-press (:left :control))
 
 (define-scliba-gui-command (com-compile-exercise :name t :menu t)
     ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :compile))
-  (climacs:edit-file (document-file exe)))
+  (pedb:compila-esercizio-preview (document-file exe))
+  (format *query-io* "compilato esercizio: ~a" exe))
 
 (define-scliba-gui-command (com-new-compito :name t :menu t)
   ((file-name 'string :prompt "File name (es: 16-bio-i-q1c1)"))
@@ -182,11 +186,15 @@
     (format (frame-query-io *application-frame*) "Creato il compito ~a" file)
     (climacs:edit-file file)))
 
+(define-presentation-type-abbreviation esercizi-argomenti ()
+  `(completion ,(cons '("Tutti" . nil) *esercizi-argomenti*)))
 
 (define-scliba-gui-command (com-filter-exercises :name t :menu t)
-    ((str 'string :prompt "String"))
-  (format (find-pane-named *application-frame* 'inter) "pol: ~a" str))
+    ((arg 'esercizi-argomenti :prompt "Argomento:"))
+  (setf (filter-criteria *application-frame*) (cdr arg))
+  (format (find-pane-named *application-frame* 'inter) "Filtro: ~a" (car arg)))
 
+;; pedb::*esercizi-argomenti*
 (define-scliba-gui-command (com-quit :name t :menu t :keystroke (#\q :control)) ()
   (frame-exit *application-frame*))
 
