@@ -103,8 +103,7 @@
   ;; 	 print-names)))
   )
 
-(defun pq-change-unit (pq unit)
-  (make-pq (pqval pq) unit))
+
 
 ;; (defmacro pq-format (pq &key (precision 3) (exponent 0) (s-o-u (list :si)) (new-unit nil))
 ;;   `(with-system-of-units ,s-o-u (pq-format% ,pq :precision ,precision :exponent ,exponent :new-unit ,new-unit)))

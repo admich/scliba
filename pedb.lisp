@@ -285,9 +285,24 @@ enddef;
     ))
 
 
-;;; 
+;;; Compiling
+(defclass mixin-pedb-backend (mixin-multiple-random-output-backend)
+  ())
 
-(defparameter *backends* '(context-backend aut-context-backend html-backend))
+(defclass pedb-context-backend (mixin-pedb-backend context-backend)
+  ())
+
+(defclass pedb-aut-context-backend (mixin-pedb-backend aut-context-backend)
+  ())
+
+(defclass pedb-html-backend (html-backend)
+  ())
+
+
+(defparameter *backends* '(pedb-context-backend pedb-aut-context-backend pedb-html-backend))
+
+
+;; ;; rivedere
 
 (defun compito-lisp-file (name)
   "return the lisp file for compito"
@@ -305,17 +320,16 @@ enddef;
   (compila-context (standard-output-file (compito-lisp-file compito) 'context-backend))
   (compila-context (standard-output-file (compito-lisp-file compito) 'aut-context-backend)))
 
-;;;; Skeletons
-(defun new-compito (file)
-  (with-open-file (stream file :direction :output :if-does-not-exist :create)
-    (format stream "~a" *skeleton-compito*))
-  (format nil "~a" file))
 
 
 ;;;; Compiling functions
-(defun compila-guarda-compito (document &key n (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'context-backend)))
-  (view-pdf (compila-context
-	     (export-file (merge-pathnames document directory) backend :n n))))
+;; rimettere n con backend
+(defun compila-guarda-compito (document &key (n 1) (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'pedb-context-backend)))
+  (setf (backend-n backend) n)
+  (compila-guarda (merge-pathnames document directory) backend)
+  ;; (view-pdf (compila-context
+  ;; 	     (export-file (merge-pathnames document directory) backend)))
+  )
 
 (defmethod export-document :after ((document esercizio) backend)
   (unless (authoring-tree-parent document)
@@ -323,6 +337,12 @@ enddef;
 
 (defun compila-esercizio-preview (document &key (backend *default-backend*))
   (compila document backend))
+
+;;;; Skeletons
+(defun new-compito (file)
+  (with-open-file (stream file :direction :output :if-does-not-exist :create)
+    (format stream "~a" *skeleton-compito*))
+  (format nil "~a" file))
 
 
 ;; (defun genera-esercizio-preview (esercizio)

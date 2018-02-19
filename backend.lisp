@@ -13,6 +13,20 @@
 	       :accessor backend-compile-fn
 	       :initform #'export-file)))
 
+(defclass mixin-multiple-random-output-backend (backend) ((n :initarg :n
+					     :initform 1
+					     :accessor backend-n)))
+
+(defmethod export-file (file (backend mixin-multiple-random-output-backend))
+  (let ((*randomize* t)
+	(n (backend-n backend)))
+    (export-document
+     (authoring-document ()
+       (loop for *i-random* upto (1- n)
+	  collect (read-file file)))
+     backend)))
+
+
 (defclass mixin-context-backend (backend) ())
 
 (defmethod initialize-instance :after ((obj mixin-context-backend) &rest rest)

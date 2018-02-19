@@ -44,8 +44,6 @@
     (export-document x backend)))
 
 
-
-
 (defmethod export-document :after ((document authoring-tree) backend) 
   (let ((*top-level-document* nil))
     (dolist (tree (slot-value document 'body))
@@ -54,17 +52,9 @@
 (defclass mixin-div-html ()
   ())
 
-(defmethod export-document :around ((document mixin-div-html) (backend html-backend))
-  (html-output (:div :class (type-of document) (call-next-method))))
-
 (defclass mixin-startstop-context ()
   ())
 
-(defmethod export-document :around ((document mixin-startstop-context) (backend mixin-context-backend))
-  (let ((namestr (string-downcase (format nil "~a" (type-of document)))))
-    (format *outstream* "~&\\start~A~@[[~A]~]~%" namestr (getf (slot-value document 'arguments) :context))
-    (call-next-method)
-    (format *outstream* "~&\\stop~A~%" namestr)))
 
 (def-authoring-tree authoring-document (authoring-tree) :documentation "Document root")
 
@@ -73,31 +63,6 @@
   (setf *main-backend* backend)
   (call-next-method)
   )
-
-(defmethod export-document :before ((document authoring-document) (backend mixin-context-backend))
-  (format *outstream* "~%
-~@[\\setupbodyfont[~dpt]~]
-~@[\\setupinterlinespace[~a]~]~%" (get-argument document :bodyfont) (get-argument document :interline)))
-
-(defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
-  (if *top-level-document*
-      (progn 
-	(format *outstream*
-		"\\starttext~%")
-	(call-next-method)
-	(format *outstream*
-		"~&\\stoptext~%"))
-      (call-next-method)))
-
-(defmethod export-document :around ((document authoring-document) (backend html-backend))
-  (if *top-level-document*
-      (who:with-html-output (*outstream* nil :prologue t  :indent t)
-	(:html
-	 (:head
-	  (:meta :charset "UTF-8")
-	  (:title (who:str (get-argument document :title))))
-	 (:body (call-next-method))))
-      (call-next-method)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; document part utility
@@ -169,12 +134,6 @@
 	    :initform 0
 	    :accessor enumerated-n)))
 
-(defmethod export-document :before ((document enumerated) (backend context-backend))
-  (format *outstream* "~&\\start~A~@[[~A]~]~%" (string-downcase (symbol-name (class-name (class-of document)))) (getf (slot-value document 'arguments) :context))
-  )
-
-(defmethod export-document :after ((document enumerated) (backend context-backend))
-  (format *outstream* "~&\\stop~A~%" (string-downcase (symbol-name (class-name (class-of document))))))
 
 (defmacro def-enumerated (name &optional (superclass '(authoring-tree)) &key (slot '()) (documentation "Enumerated tree"))
   "Define an enumerated tree. fmt-str is the format string for the title. "
@@ -210,10 +169,6 @@
 ;; buffer
 (defparameter *buffers* nil)
 (def-authoring-tree buffered)
-(defmethod export-document :around ((document buffered) (backend autarchy-backend))
-  (let ((*outstream* (cdr (assoc (type-of document) *buffers*))))
-    (call-next-method)))
-
 
 (defmacro def-buffer (name)
   `(pushnew (cons ',name  (make-string-output-stream)) *buffers* :key 'car))
@@ -243,8 +198,6 @@
 (def-authoring-tree book)
 
 (def-authoring-tree par)
-(defmethod export-document :before ((document par) (backend mixin-context-backend))
-  (format *outstream* "~&\\par ~@[\\inouter{~a}~]" (and (getf (authoring-tree-arguments document) :tag)  (export-document-on-string (getf (authoring-tree-arguments document) :tag) backend))))
 
 (def-authoring-tree framedtext (authoring-tree mixin-div-html mixin-startstop-context))
 
@@ -253,31 +206,15 @@
 	     (setf (getf (authoring-tree-arguments class) :context) "middle")))
 
 (def-simple-authoring-tree nbsp)
-(defmethod export-document ((document nbsp) (backend mixin-context-backend))
-  (format *outstream*"\\nbsp "))
 
 (def-authoring-tree newline)
-(defmethod export-document ((document newline) (backend mixin-context-backend))
-  (format *outstream*"~&\\crlf~%"))
 
 (def-authoring-tree hline)
-(defmethod export-document ((document hline) (backend mixin-context-backend))
-  (format *outstream*"~&\\hairline~%"))
 
 (def-authoring-tree hlinefill)
-(defmethod export-document ((document hlinefill) (backend mixin-context-backend))
-  (format *outstream*"~~\\hrulefill ~~"))
-(defmethod export-document ((document hlinefill) (backend html-backend))
-  (format *outstream*"_________________"))
 
 ;; footnote
 (def-authoring-tree footnote)
-
-(defmethod export-document :before ((document footnote) (backend mixin-context-backend))
-  (format *outstream*"\\footnote{"))
-
-(defmethod export-document :after ((document footnote) (backend mixin-context-backend))
-  (format *outstream*"}"))
 
 
 (defmacro title (string)
@@ -285,15 +222,8 @@
 
 (def-authoring-tree footer (authoring-tree) :documentation "the footer of the page")
 
-(defmethod export-document :before ((document footer) (backend aut-context-backend))
-  (format *outstream* "\\setupfootertexts[~A][~A]" (get-argument document :left) (get-argument document :right)))
 
 (def-simple-authoring-tree centering (authoring-tree) "Center the content")
-
-(defmethod export-document :around ((document centering) (backend mixin-context-backend))
-  (format *outstream* "~&\\midaligned{")
-  (call-next-method)
-  (format *outstream* "}"))
 
 
 ;;;;  font size
@@ -330,32 +260,21 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 |#
 
-(defmacro def-font-size (name context)
-  `(progn
-     (def-simple-authoring-tree ,name)
-     (defmethod export-document :around ((document ,name) (backend mixin-context-backend))
-		(format *outstream* (concatenate 'string "{\\" ,context " "))
-		(call-next-method)
-		(format *outstream* "}"))))
 
-(def-font-size tfxx "tfxx")
-(def-font-size tfx "tfx")
-(def-font-size tf "tf")
-(def-font-size tfa "tfa")
-(def-font-size tfb "tfb")
-(def-font-size tfc "tfc")
-(def-font-size tfd "tfd")
-(def-font-size tfe "tfe")
+
+(def-simple-authoring-tree tfxx)
+(def-simple-authoring-tree tfx)
+(def-simple-authoring-tree tf)
+(def-simple-authoring-tree tfa)
+(def-simple-authoring-tree tfb)
+(def-simple-authoring-tree tfc)
+(def-simple-authoring-tree tfd)
+(def-simple-authoring-tree tfe)
 
 
 ;;;; aligned
 (def-simple-authoring-tree align-right)
 
-(defmethod export-document :before ((document align-right) (backend mixin-context-backend))
-  (format *outstream* "{\\rightaligned "))
-
-(defmethod export-document :after ((document align-right) (backend mixin-context-backend))
-  (format *outstream* "}"))
 
 ;;;; sections
 (def-leveled-counter section)
@@ -398,69 +317,27 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 
 
-(defmethod export-document ((document section) (backend autarchy-backend))
-  (funcall (nth (1- (length (section-n document))) *section-head-fn*) document)
-  (call-next-method))
-
 (defvar *section-level* 0)
+
 (defparameter *section-context-labels* (list "part" "chapter" "section" "subsection" "subsubsection"))
-
-(defmethod export-document :before ((document section) (backend context-backend))
-  (incf *section-level*)
-  (format *outstream*"~&\\start~A~@[[~A]~]~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context)))
-
-(defmethod export-document :after ((document section) (backend context-backend))
-  (format *outstream*"~&\\stop~A~%" (elt *section-context-labels* *section-level*) (getf (slot-value document 'arguments) :context))
-  (decf *section-level*))
-
 
 ;;; intemize
 (def-authoring-tree itemize)
 
-(defmethod export-document :before ((document itemize) (backend mixin-context-backend))
-  (format *outstream* "~&\\startitemize~@[[~A]~]~%" (getf (slot-value document 'arguments) :context)))
-
-(defmethod export-document  :after ((document itemize) (backend mixin-context-backend))
-  (format *outstream* "~&\\stopitemize~%"))
-
 (def-authoring-tree item)
-(defmethod export-document :before ((document item) (backend mixin-context-backend))
-  (format *outstream*"~&\\item "))
 
 (def-simple-authoring-tree bf)
 
-(defmethod export-document :before ((document bf) (backend mixin-context-backend))
-  (format *outstream*"{\\bf "))
-(defmethod export-document :after ((document bf) (backend mixin-context-backend))
-  (format *outstream*"}"))
-
 (def-simple-authoring-tree it)
-(defmethod export-document :before ((document it) (backend mixin-context-backend))
-  (format *outstream*"{\\it "))
-(defmethod export-document :after ((document it) (backend mixin-context-backend))
-  (format *outstream*"}"))
 
+;;; fint
 (def-simple-authoring-tree roman)
-(defmethod export-document :before ((document roman) (backend mixin-context-backend))
-  (format *outstream*"{\\rm "))
-(defmethod export-document :after ((document roman) (backend mixin-context-backend))
-  (format *outstream*"}"))
 
 (def-simple-authoring-tree sans-serif)
-(defmethod export-document :before ((document sans-serif) (backend mixin-context-backend))
-  (format *outstream*"{\\ss "))
-(defmethod export-document :after ((document sans-serif) (backend mixin-context-backend))
-  (format *outstream*"}"))
 
 (def-simple-authoring-tree small-caps)
-(defmethod export-document :before ((document small-caps) (backend mixin-context-backend))
-  (format *outstream*"{\\sc "))
-(defmethod export-document :after ((document small-caps) (backend mixin-context-backend))
-  (format *outstream*"}"))
 
 (def-simple-authoring-tree newpage)
-(defmethod export-document ((document newpage) (backend mixin-context-backend))
-  (format *outstream*"\\page "))
 
 (defmacro emph (&rest body)
   `(it ,@body))
@@ -468,9 +345,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (def-authoring-tree columns (authoring-tree mixin-startstop-context))
 
 (def-authoring-tree newcolumn)
-(defmethod export-document ((document newcolumn) (backend mixin-context-backend))
-  (format *outstream*"~&\\column~%"))
-
 
 (defclass mixin-math ()
   ())
@@ -480,80 +354,21 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
     (call-next-method)
     ))
 
-
 (def-authoring-tree ref)
-(defmethod export-document ((document ref) (backend context-backend))
-  (format *outstream*"\\in[~a]" (get-argument document :ref)))
 
 (def-authoring-tree figure)
-(defmethod export-document :before ((document figure) (backend context-backend))
-  (format *outstream*"\\placefigure[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption)))
-(defmethod export-document :after ((document figure) (backend context-backend))
-  (format *outstream*"}"))
 
 (def-authoring-tree mpcode)
-
-(defmethod export-document :before  ((document mpcode) (backend mixin-context-backend))
-  (format *outstream* "~&\\startMPcode~%")
-  )
-
-(defmethod export-document :after  ((document mpcode) (backend mixin-context-backend))
-  (format *outstream* "~&\\stopMPcode~%")
-  )
 
 ;;;;TABLE
 (def-authoring-tree table)
 
-(defmethod export-document :before ((document table) (backend mixin-context-backend))
-  (with-document-argument (frame stretch) document
-    (format *outstream* "~& \\startxtable[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch)))
-
-(defmethod export-document :after ((document table) (backend mixin-context-backend))
-  (format *outstream*"~&\\stopxtable~%"))
-
-(defmethod export-document ((document table) (backend html-backend))
-  (html-output
-   (:table (call-next-method))))
-
 (def-authoring-tree table-row)
-
-(defmethod export-document :before ((document table-row) (backend mixin-context-backend))
-  (format *outstream*"\\startxrow "))
-(defmethod export-document :after ((document table-row) (backend mixin-context-backend))
-  (format *outstream*"\\stopxrow~%"))
-
-(defmethod export-document ((document table-row) (backend html-backend))
-  (html-output
-    (:tr (call-next-method))))
 
 (def-authoring-tree table-cell)
 
-(defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
-  
-  (let ((nc (get-argument document :nc)))
-    (format *outstream* "\\startxcell ")))
-
-(defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
-  (format *outstream*"\\stopxcell "))
-
-
-(defmethod export-document ((document table-cell) (backend html-backend))
-  (html-output
-    (:td (call-next-method))))
-
 (def-simple-authoring-tree imath (authoring-tree mixin-math))
 
-(defmethod export-document :before ((document imath) (backend mixin-context-backend))
-  (format *outstream*"$"))
-(defmethod export-document :after ((document imath) (backend mixin-context-backend))
-  (format *outstream*"$"))
-
 (def-authoring-tree phys-n)
-(defmethod export-document  ((document phys-n) (backend context-backend))
-  (scliba-f:n outstream (first (authoring-tree-body document)) nil nil))
 
 (def-authoring-tree formula (authoring-tree mixin-math mixin-div-html mixin-startstop-context))
-
-(defmethod export-document :before ((document formula) (backend context-backend))
-  (format *outstream*"~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref)))
-

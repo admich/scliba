@@ -129,7 +129,9 @@
 	   #:section-level
 	   #:*default-backend*
 	   #:compila
-	   #:*current-node*))
+	   #:*current-node*
+	   #:mixin-multiple-random-output-backend
+	   #:backend-n))
 
 ; to use antik package without name conflict
 ;;(antik:make-user-package "SCLIBA")

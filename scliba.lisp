@@ -46,23 +46,38 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     (aut-context-backend (merge-pathnames (merge-pathnames (pathname-name file) "aut-context/prova.tex") file))
     (html-backend (merge-pathnames (merge-pathnames (pathname-name file) "html/prova.html") file) )))
 
+(defgeneric export-file (file backend))
 
-(defun export-file (file backend &key n)
+(defmethod export-file :around ((file t) (backend t))
   (let ((outfile (standard-output-file file backend))
 	(*top-level-document* t))
     (uiop:ensure-all-directories-exist (list outfile))
     (with-open-file (stream outfile :direction :output :if-exists :supersede :if-does-not-exist :create)
       (let ((*outstream* stream)
 	    (*outdirectory* (pathname-directory outfile)))
-	(if n
-	    (let ((*randomize* t))
-	      (export-document
-	       (authoring-document ()
-		 (loop for *i-random* upto (1- n)
-		    collect (read-file file)))
-	       backend))
-	    (export-document (read-file file) backend))))
+	(call-next-method)
+	))
     outfile))
+
+(defmethod export-file ((file t) (backend t))
+  (export-document (read-file file) backend))
+
+;; (defun export-file (file backend &key n)
+;;   (let ((outfile (standard-output-file file backend))
+;; 	(*top-level-document* t))
+;;     (uiop:ensure-all-directories-exist (list outfile))
+;;     (with-open-file (stream outfile :direction :output :if-exists :supersede :if-does-not-exist :create)
+;;       (let ((*outstream* stream)
+;; 	    (*outdirectory* (pathname-directory outfile)))
+;; 	(if n
+;; 	    (let ((*randomize* t))
+;; 	      (export-document
+;; 	       (authoring-document ()
+;; 		 (loop for *i-random* upto (1- n)
+;; 		    collect (read-file file)))
+;; 	       backend))
+;; 	    (export-document (read-file file) backend))))
+;;     outfile))
 
 
 (defun compila-context (file &key (mode nil) (output nil))

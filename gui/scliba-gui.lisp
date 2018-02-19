@@ -42,7 +42,9 @@
 
 (defun refresh-pedb ()
   (dolist (exe (uiop:directory-files *esercizi-directory* "*.lisp"))
-    (push-exercise (make-exercise exe))))
+    (push-exercise (make-exercise exe)))
+  (update-list-exercises))
+
 
 (defclass tabular-view (view)
   ())
@@ -63,9 +65,7 @@
     (formatting-cell () (present (exercise-number obj)))
     (formatting-cell () (present (pathname-name (document-file obj))))
     (formatting-cell () (present (exercise-type obj)))
-    (formatting-cell () (present (exercise-subject obj)))
-    )
-  )
+    (formatting-cell () (present (exercise-subject obj)))))
 
 
 (defclass file-view (view) 
@@ -78,13 +78,37 @@
 (defgeneric display-pane-with-view (frame pane view))
 
 
+
+;;;; command table
+(define-command-table exercise-selector-commands)
+(define-command (com-next-exercise :name "Next"
+				   :command-table exercise-selector-commands
+				   :keystroke (#\i :control)
+				   :menu t
+				   :name t
+				   :provide-output-destination-keyword nil
+				   )
+    ()
+  (format (find-pane-named (find-application-frame 'scliba-gui) 'inter) "PIPPO"))
+
+
 (define-application-frame scliba-gui ()
   ((%filter-criteria :accessor filter-criteria
-	       :initform nil))
+		     :initform nil)
+   (%listed-exercises :accessor listed-exercises
+		      :initform nil)
+   (%current-exercise :accessor current-exercise
+		      :initform nil))
+  (:command-table (scliba-gui
+		   :inherit-from (exercise-selector-commands)
+		   :inherit-menu t))
   (:menu-bar t)
   (:panes
    (list :application
          :display-function 'display-list
+	 :min-width 10
+	 :width 400
+	 :max-width 800
          :scroll-bars :both)
    (main :application
          :display-function 'display-main
@@ -95,14 +119,20 @@
            :display-function 'display-button
            :max-height 5)
    (inter :interactor
-          :max-height 10))
+          :max-height 100))
   (:layouts (default
-             (vertically ()
-               button
-               (horizontally ()
-                 (1/4 list)
-                 (3/4 main))
-               inter))))
+		(vertically ()
+		  button
+		  (horizontally ()
+		    ;; (1/4 list)
+		    list
+		    (make-pane 'clim-extensions:box-adjuster-gadget)
+		    main
+		    ;; (3/4 main)
+		    )
+		  (make-pane 'clim-extensions:box-adjuster-gadget)
+		  inter)
+		)))
 
 (defun scliba-gui (&key new-process)
   (clim-sys:make-process (lambda () (run-frame-top-level (make-application-frame 'scliba-gui)) :name "scliba-gui")))
@@ -121,8 +151,10 @@
 (defmethod display-pane-with-view (frame pane (view file-view))
   (let ((file (file view)))
     (if file
-      (cat file pane)
-      (write-string "no file" pane))))
+	(cat file pane)
+	(if (current-exercise *application-frame*)
+	    (cat (document-file (current-exercise *application-frame*)) pane)
+	    (write-string "no file" pane)))))
 
 (defmethod display-pane-with-view (frame pane (view pdf-view))
   (let ((file (file view)))
@@ -137,15 +169,36 @@
       (format pane "no pdf file: ~a" file))))
   
 
+(defun update-list-exercises ()
+  (setf (listed-exercises *application-frame*)
+	(loop for exe being the hash-value of *pedb*
+	   when (exe-match-criteria exe) collect exe
+	     ))
+  (setf (current-exercise *application-frame*) (first (listed-exercises *application-frame*) ))
+  )
+
 (defun display-list (frame pane)
   (list-exercises frame pane))
 
 (defun list-exercises (frame pane &key (directory *esercizi-directory*))
-  (formatting-table (pane :x-spacing 50)
-    (loop for exe being the hash-value of *pedb* do
-	 (when (exe-match-criteria exe)
-	   (present exe 'scliba-exercise-document :stream pane :view +tabular-view+))))
-  (format pane "~%"))
+  (let (current-presentation)
+    (formatting-table (pane :x-spacing 50 :y-spacing 15)
+      (loop for exe in (listed-exercises *application-frame*)
+	 do
+	   (if (equal exe (current-exercise *application-frame*)) 
+	       (surrounding-output-with-border (pane :shape :rounded :background +red+) (setf current-presentation (present exe 'scliba-exercise-document :stream pane :view +tabular-view+)))
+	       (present exe 'scliba-exercise-document :stream pane :view +tabular-view+)))
+      ;; (loop for exe being the hash-value of *pedb* do
+      ;; 	 (when (exe-match-criteria exe)
+      ;; 	   (surrounding-output-with-border (pane :shape :rounded  :background +red+)
+      ;; 	     (present exe 'scliba-exercise-document :stream pane :view +tabular-view+))
+      ;; 	   ))
+      )
+    (format pane "~%")
+    
+    (when current-presentation (multiple-value-bind (x y) (output-record-position current-presentation)
+       (scroll-extent pane 0 y)))
+    ))
 
 (defun exe-match-criteria (exe)
   (if (filter-criteria *application-frame*)
@@ -158,9 +211,28 @@
 (define-scliba-gui-command (com-refresh-pedb :name t :menu t) ()
   (refresh-pedb))
 
+(define-scliba-gui-command (com-next-exercise :name t :menu t :keystroke (#\n :control))
+    ()
+  (let* ((exercises (listed-exercises *application-frame*))
+	 (n-exe (position (current-exercise *application-frame*) exercises)))
+    (setf (current-exercise *application-frame*) (nth (mod (1+ n-exe) (length exercises)) exercises))
+    
+    ))
+
+(define-scliba-gui-command (com-previous-exercise :name t :menu t :keystroke (#\p :control))
+    ()
+  (let* ((exercises (listed-exercises *application-frame*))
+	 (n-exe (position (current-exercise *application-frame*) exercises)))
+    (setf (current-exercise *application-frame*) (nth (mod (1- n-exe) (length exercises)) exercises))
+    
+    ))
+
+
 (define-scliba-gui-command (com-show-exercise :name t :menu t)
     ((exe 'scliba-exercise-document :prompt "Esercizio" :gesture :select))
-  (setf  (stream-default-view (find-pane-named *application-frame* 'main)) (make-instance 'file-view :file (document-file exe))))
+  (setf (current-exercise *application-frame*) exe)
+  ;; (setf  (stream-default-view (find-pane-named *application-frame* 'main)) (make-instance 'file-view :file (document-file exe)))
+  )
 
 (define-gesture-name :view :pointer-button-press (:middle :control))
 
@@ -192,9 +264,9 @@
 (define-scliba-gui-command (com-filter-exercises :name t :menu t)
     ((arg 'esercizi-argomenti :prompt "Argomento:"))
   (setf (filter-criteria *application-frame*) (cdr arg))
-  (format (find-pane-named *application-frame* 'inter) "Filtro: ~a" (car arg)))
+  (format (find-pane-named *application-frame* 'inter) "Filtro: ~a" (car arg))
+  (update-list-exercises))
 
-;; pedb::*esercizi-argomenti*
 (define-scliba-gui-command (com-quit :name t :menu t :keystroke (#\q :control)) ()
   (frame-exit *application-frame*))
 

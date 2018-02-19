@@ -39,6 +39,11 @@
       (rankine     5/9       ()) ))
 
 
+;; pq utility
+(defun pq-change-unit (pq unit)
+  (make-pq (pqval pq) unit))
+
+
 ;; print number
 
 (defun number-exponent (num)
