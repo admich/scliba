@@ -52,6 +52,23 @@
      	    )))
      ))
 
+(defmacro def-simple-authoring-tree-fn (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
+  `(progn
+     (defclass ,name (,@superclass)
+       ())
+     (defun ,name (&rest body)
+       (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
+     	 (make-instance ',name :body body)))
+     ;; (defmacro ,name (&body body)
+     ;;   (let ((cl '',name))
+     ;; 	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
+     ;; 		(tree (make-instance ,cl)))
+     ;; 	    (let ((*current-node* tree))
+     ;; 	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
+     ;; 	      tree)
+     ;; 	    )))
+     ))
+
 
 
 

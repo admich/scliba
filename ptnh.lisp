@@ -46,8 +46,16 @@
 	 (*section-fonts* (loop for i in newfonts collect
 			       (cons 'sans-serif (cdr i)))))
     (if (eq 0 (section-level document))
-	(export-document (align-right (tfd (small-caps (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title)))) (newline ())) *main-backend*)
-	(funcall (nth (- (length (section-n document)) 2) *section-head-fn*) document))))
+	(export-document (list (inmargin (:margin :right) (tfd  (small-caps (format nil "~{~a~}" (reverse (cdr (section-n document)))))))
+ 			       (align-right (tfd (small-caps (format nil "~a~%" (get-argument document :title))
+							     (inframed (:context "frame=off,rightframe=on,rulethickness=2pt,framecolor=red") ""))))) *main-backend*)
+	(funcall (nth (- (length (section-n document)) 2) *section-head-fn*) document)
+	)))
+
+
+;; (framed (:context "frame=off,rightframe=on,rulethickness=2pt,framecolor=red") (align-right (tfd (small-caps (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title)))) (newline ())))
+ 
+ 
 
 (def-authoring-tree ptnh-document (authoring-document) :documentation "ptnh root document")
 
@@ -71,11 +79,21 @@
   (with-document-argument (title) document
     (export-document (title (format nil "Formulario: ~a" (export-document-on-string title backend))) backend)))
 
-(def-authoring-tree argomento)
-(defmethod export-document :before ((document argomento) backend)
-  (with-document-argument (title) document
-    (export-document (list (newline ()) (bf (format nil "~a" (export-document-on-string title backend))) (newline ())) backend)))
+;; (def-authoring-tree argomento)
 
+;; (defmethod export-document :before ((document argomento) backend)
+;;   (with-document-argument (title) document
+;;     (export-document (list (newline ())
+;; 			   (bf (format nil "~a" (export-document-on-string title backend))) (newline ())) backend)))
+
+;; (defmethod export-document  ((document argomento) backend)
+;;   (with-document-argument (title) document
+;;     (export-document (framedtext ()
+;; 		       (list (newline ())
+;; 			     (bf (format nil "~a" (export-document-on-string title backend))) (newline ()) (authoring-tree-body document))) backend)))
+
+(defmacro argomento ((&key title) &body body)
+  `(list (framedtext (:context "corner=00, width=local") (framedtext (:context "width=local,align=flushright,frame=off,background=color,backgroundcolor=blue,foreground=color,foregroundcolor=white" ) (bf ,title)) (newline ()) ,@body) ))
 ;;;; Compiler
 
 (defun compila-guarda-formulario (document &key (directory (merge-pathnames "formulari/file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))

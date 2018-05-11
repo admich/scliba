@@ -258,6 +258,13 @@
     (format (frame-query-io *application-frame*) "Creato il compito ~a" file)
     (climacs:edit-file file)))
 
+(define-scliba-gui-command (com-new-eserciziario :name t :menu t)
+  ((file-name 'string :prompt "File name (es: esercizi-argomento)"))
+  (let ((file (merge-pathnames file-name *eserciziari-directory*)))
+    (pedb:new-compito file)
+    (format (frame-query-io *application-frame*) "Creato l'eserciziario ~a" file)
+    (climacs:edit-file file)))
+
 (define-presentation-type-abbreviation esercizi-argomenti ()
   `(completion ,(cons '("Tutti" . nil) *esercizi-argomenti*)))
 

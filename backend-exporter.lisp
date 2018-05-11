@@ -1,5 +1,6 @@
 (in-package :scliba)
-
+(defun output-context-with-option (command context-option)
+  (format nil "~a~@[[~a]~]~%" command context-option))
 
 (defmethod export-document :around ((document mixin-div-html) (backend html-backend))
   (html-output (:div :class (type-of document) (call-next-method))))
@@ -19,7 +20,7 @@
   (if *top-level-document*
       (progn 
 	(format *outstream*
-		"\\starttext~%")
+		"\\starttext~%\\setupcolors[state=start]~%")
 	(call-next-method)
 	(format *outstream*
 		"~&\\stoptext~%"))
@@ -34,6 +35,48 @@
 	  (:title (who:str (get-argument document :title))))
 	 (:body (call-next-method))))
       (call-next-method)))
+
+
+(defmethod export-document :before ((document hbox) (backend aut-context-backend))
+  (format *outstream* "\\hbox{ "))
+
+(defmethod export-document :after ((document hbox) (backend aut-context-backend))
+  (format *outstream* "} "))
+
+(defmethod export-document :before ((document hss) (backend aut-context-backend))
+  (format *outstream* "\\hss "))
+(defmethod export-document :before ((document vss) (backend aut-context-backend))
+  (format *outstream* "\\vss "))
+
+
+(defmethod export-document :before ((document framed) (backend aut-context-backend))
+  (with-document-argument (context) document
+    (format *outstream* "\\framed~@[[~a]~]{ " context)))
+
+(defmethod export-document :after ((document framed) (backend aut-context-backend))
+  (format *outstream* "} "))
+
+(defmethod export-document :before ((document inframed) (backend aut-context-backend))
+  (with-document-argument (context) document
+    (format *outstream* "\\inframed~@[[~a]~]{ " context)))
+
+(defmethod export-document :after ((document inframed) (backend aut-context-backend))
+  (format *outstream* "} "))
+
+(defmethod export-document :before ((document inmargin) (backend aut-context-backend))
+  (with-document-argument (margin) document
+    (let ((context-com
+	   (case margin
+	     (:right "inright")
+	     (:left "inleft")
+	     (otherwise "inmargin"))))
+      
+      (format *outstream* "\\~a{ " context-com))))
+
+(defmethod export-document :after ((document inmargin) (backend aut-context-backend))
+  (format *outstream* "} "))
+
+
 
 (defmethod export-document :before ((document enumerated) (backend context-backend))
   (format *outstream* "~&\\start~A~@[[~A]~]~%" (string-downcase (symbol-name (class-name (class-of document)))) (getf (slot-value document 'arguments) :context))
@@ -170,21 +213,36 @@
   (format *outstream* "~&\\stopMPcode~%")
   )
 
+;;;; TABLE
+(defun setup-context-table-align (align)
+  (loop for x in align
+     for i from 1 upto 100
+     with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
+     collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
+
+
 (defmethod export-document :before ((document table) (backend mixin-context-backend))
-  (with-document-argument (frame stretch) document
-    (format *outstream* "~& \\startxtable[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch)))
+  (with-document-argument (frame stretch align caption) document
+    (when caption (format *outstream* "~%~%{\\bf ~a}\\blank~%" caption))
+    (format *outstream* "~& \\bTABLE[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch)
+    (when align
+      (loop for str in (setup-context-table-align align) do
+	   (format *outstream* str)))
+    ))
 
 (defmethod export-document :after ((document table) (backend mixin-context-backend))
-  (format *outstream*"~&\\stopxtable~%"))
+  (format *outstream*"~&\\eTABLE~%"))
 
 (defmethod export-document ((document table) (backend html-backend))
   (html-output
     (:table (call-next-method))))
 
 (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
-  (format *outstream*"\\startxrow "))
+  (with-document-argument (context) document
+    (format *outstream*   (output-context-with-option "\\bTR" context))))
+
 (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
-  (format *outstream*"\\stopxrow~%"))
+  (format *outstream*"\\eTR~%"))
 
 (defmethod export-document ((document table-row) (backend html-backend))
   (html-output
@@ -193,15 +251,16 @@
 (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
   
   (let ((nc (get-argument document :nc)))
-    (format *outstream* "\\startxcell ")))
+    (format *outstream* "\\bTD ")))
 
 (defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
-  (format *outstream*"\\stopxcell "))
+  (format *outstream*"\\eTD "))
 
 (defmethod export-document ((document table-cell) (backend html-backend))
   (html-output
     (:td (call-next-method))))
 
+;;;; MATH
 (defmethod export-document :before ((document imath) (backend mixin-context-backend))
   (format *outstream*"$"))
 (defmethod export-document :after ((document imath) (backend mixin-context-backend))

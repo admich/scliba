@@ -1,18 +1,20 @@
 ;;;; package.lisp
 (in-package #:cl-user)
+
 (defpackage #:scliba
-  (:use #:cl #:alexandria  #:antik ;; #:local-time conflict with antik
+  (:use #:cl ;; #:antik ;; #:local-time conflict with antik
 	)
+  (:import-from #:alexandria #:compose #:ensure-list #:flatten)
   ;; antik::*antik-user-shadow-symbols*
-  (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
- #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
- #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
- #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
- #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
- #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
- #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
- #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
- #:PSI #:KNOTS #:ROTATE)
+  ;; (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
+  ;; #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
+  ;; #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
+  ;; #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
+  ;; #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
+  ;; #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
+  ;; #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
+  ;; #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
+  ;; #:PSI #:KNOTS #:ROTATE)
   (:export #:*math*
 	   #:*debug*
 	   #:*randomize*
@@ -58,6 +60,7 @@
 	   #:*section-context-labels*
 	   #:bf
 	   #:framedtext
+	   #:framed
 	   #:columns
 	   #:align-right
 	   #:randomize
@@ -131,10 +134,21 @@
 	   #:compila
 	   #:*current-node*
 	   #:mixin-multiple-random-output-backend
-	   #:backend-n))
+	   #:backend-n
+	   #:simple-table-rows
+	   #:hss
+	   #:inmargin
+	   #:inframed
+	   #:*s-o-u*)
+  (:export
+   #:scliba-physical-quantity
+   #:pq-exponent
+   #:pq-new-unit
+   #:pq-s-o-u
+   #:pq-precision))
 
 ; to use antik package without name conflict
-;;(antik:make-user-package "SCLIBA")
+(antik:make-user-package :scliba)
 
 (defpackage #:scliba-formatter
   (:use #:cl #:scliba)
@@ -145,25 +159,27 @@
   (:nicknames #:scliba-f))
 
 (defpackage #:physics
-  (:use #:cl )
+  (:use #:cl #:scliba)
   (:nicknames #:phys)
   (:export
-   #:bigg
-   #:littleg))
+   #:big-g
+   #:little-g
+   #:costante-stefan-boltzmann))
 
 (antik:make-user-package :physics)
 
 (defpackage #:scliba-pedb
-  (:use #:cl #:alexandria #:scliba #:antik)
-  (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
- #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
- #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
- #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
- #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
- #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
- #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
- #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
- #:PSI #:KNOTS #:ROTATE)
+  (:use #:cl  #:scliba #:physics)
+  (:import-from #:alexandria #:with-unique-names)
+  ;; (:shadowing-import-from #:antik #:MAXIMIZING #:MAXIMIZE #:MINIMIZING #:MINIMIZE
+  ;; #:MULTIPLYING #:MULTIPLY #:SUMMING #:SUM #:FOR #:TIME
+  ;; #:LENGTH #:DECF #:INCF #:SIGNUM #:ROUND #:FLOOR
+  ;; #:COERCE #:< #:<= #:> #:>= #:= #:MAX #:MIN
+  ;; #:ZEROP #:MINUSP #:PLUSP #:ABS #:EXP #:LOG #:EXPT
+  ;; #:SQRT #:TANH #:COSH #:SINH #:ATAN #:ACOS #:ASIN
+  ;; #:TAN #:COS #:SIN #:/ #:* #:- #:+ GRID:AREF
+  ;; #:POLAR-TO-RECTANGULAR #:RECTANGULAR-TO-POLAR #:ACCELERATION
+  ;; #:PSI #:KNOTS #:ROTATE)
   (:nicknames #:pedb)
   (:export
    #:*esercizi-directory*
@@ -177,8 +193,10 @@
    #:compila-esercizio-preview
    #:*esercizi-argomenti*))
 
+(antik:make-user-package :scliba-pedb)
 
 (defpackage #:scliba-ptnh
-  (:use #:cl #:scliba #:pedb)
+  (:use #:cl #:scliba #:pedb #:physics)
   (:nicknames #:ptnh))
 
+(antik:make-user-package :scliba-ptnh)

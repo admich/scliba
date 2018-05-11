@@ -64,9 +64,11 @@
   (call-next-method)
   )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; document part utility
-;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; TEX
+(def-authoring-tree hbox)
+(def-authoring-tree hss)
+(def-authoring-tree vss)
+
 ;;;; input
 
 (defun input (filename)
@@ -201,9 +203,13 @@
 
 (def-authoring-tree framedtext (authoring-tree mixin-div-html mixin-startstop-context))
 
+
 (defmethod initialize-instance :after ((class framedtext) &rest rest)
 	   (when (getf (authoring-tree-arguments class) :middle)
 	     (setf (getf (authoring-tree-arguments class) :context) "middle")))
+
+(def-authoring-tree framed (authoring-tree mixin-div-html))
+(def-authoring-tree inframed (authoring-tree mixin-div-html))
 
 (def-simple-authoring-tree nbsp)
 
@@ -224,6 +230,22 @@
 
 
 (def-simple-authoring-tree centering (authoring-tree) "Center the content")
+
+;;; font
+(def-simple-authoring-tree-fn bf)
+
+(def-simple-authoring-tree-fn it)
+
+(def-simple-authoring-tree-fn roman)
+
+(def-simple-authoring-tree-fn sans-serif)
+
+(def-simple-authoring-tree-fn small-caps)
+
+
+
+(defmacro emph (&rest body)
+  `(it ,@body))
 
 
 ;;;;  font size
@@ -262,14 +284,14 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 
 
-(def-simple-authoring-tree tfxx)
-(def-simple-authoring-tree tfx)
-(def-simple-authoring-tree tf)
-(def-simple-authoring-tree tfa)
-(def-simple-authoring-tree tfb)
-(def-simple-authoring-tree tfc)
-(def-simple-authoring-tree tfd)
-(def-simple-authoring-tree tfe)
+(def-simple-authoring-tree-fn tfxx)
+(def-simple-authoring-tree-fn tfx)
+(def-simple-authoring-tree-fn tf)
+(def-simple-authoring-tree-fn tfa)
+(def-simple-authoring-tree-fn tfb)
+(def-simple-authoring-tree-fn tfc)
+(def-simple-authoring-tree-fn tfd)
+(def-simple-authoring-tree-fn tfe)
 
 
 ;;;; aligned
@@ -312,8 +334,9 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
        (lambda (document)
 	 (let* ((font-list (nth (- (length (section-n document)) 2) *section-fonts*))
 		(font-fn (compose (first font-list) (second font-list) (third font-list))))
-	   (export-document
-	    (funcall font-fn (nbsp ) (newline ())  (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))  (newline ()) (nbsp )) *main-backend*)))))
+	   (export-document ;; (bf "PPPP")
+	     (funcall font-fn (nbsp ) (newline ())  (format nil "~% ~{~a.~} ~a~%" (reverse (cdr (section-n document))) (get-argument document :title))  (newline ()) (nbsp ))
+			    *main-backend*)))))
 
 
 
@@ -326,21 +349,9 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree item)
 
-(def-simple-authoring-tree bf)
-
-(def-simple-authoring-tree it)
-
-;;; fint
-(def-simple-authoring-tree roman)
-
-(def-simple-authoring-tree sans-serif)
-
-(def-simple-authoring-tree small-caps)
+;;;; 
 
 (def-simple-authoring-tree newpage)
-
-(defmacro emph (&rest body)
-  `(it ,@body))
 
 (def-authoring-tree columns (authoring-tree mixin-startstop-context))
 
@@ -360,6 +371,10 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree mpcode)
 
+
+
+;;;; inmargin
+(def-authoring-tree inmargin)
 ;;;;TABLE
 (def-authoring-tree table)
 
@@ -367,6 +382,12 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree table-cell)
 
+(defmacro simple-table-rows (args list)
+  `(loop for row in ,list
+      collect (table-row ()
+		(loop for cell in row collect
+		     (table-cell () cell)))))
+;;;; MATH
 (def-simple-authoring-tree imath (authoring-tree mixin-math))
 
 (def-authoring-tree phys-n)

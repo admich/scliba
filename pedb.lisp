@@ -4,7 +4,7 @@
 (defparameter *esercizi-directory* (uiop:merge-pathnames* #p"exercises/" *pedb-directory*)) ; #p"/home/admich/Documenti/scuola/my-didattica/context/esercizi/"
 (defparameter *esercizi-preview-directory* (uiop:merge-pathnames* #p"preview/" *pedb-directory*))
 (defparameter *compiti-directory* (uiop:merge-pathnames*  #p"compiti/file.lisp" *pedb-directory*))
-(defparameter *eserciziari-directory* (uiop:merge-pathnames* #p"eserciziari/" *pedb-directory*))
+(defparameter *eserciziari-directory* (uiop:merge-pathnames* #p"eserciziari/file.lisp" *pedb-directory*))
 (defparameter *esercizi-argomenti* '(("Misure" . "mis") ("Rappresentazione" . "rap") ("Vettori" . "vet") ("Forze" . "for") ("Momenti" . "mom")  ("Fluidi" . "fl") ("Cinematica1d" . "cin1") ("Cinematica2d" . "cin2")  ("Dinamica" . "din") ("Energia" . "ener") ("Termologia" . "term") ("Elettrostatica" . "elect") ("Correnti elettriche" . "electcurr"))
   "argomenti")
 

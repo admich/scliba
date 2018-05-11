@@ -18,8 +18,8 @@
 					     :accessor backend-n)))
 
 (defmethod export-file (file (backend mixin-multiple-random-output-backend))
-  (let ((*randomize* t)
-	(n (backend-n backend)))
+  (let* ((n (backend-n backend))
+	 (*randomize* (if (> n 1) t nil)))
     (export-document
      (authoring-document ()
        (loop for *i-random* upto (1- n)

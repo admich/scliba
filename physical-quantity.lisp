@@ -1,7 +1,13 @@
 (in-package #:scliba)
-;; hacking maybe to remove
+(defparameter *s-o-u* '(:si :deg))
+
 (define-units 'time '((hour (* 3600 second) (hr hours) "h")))
+(define-units 'time '((minute (* 60 second) (min minutes) "min")))
 (define-units 'length '((decimeter     0.1       (dm decimeters) "dm")))
+
+(define-units 'pressure
+    '((pascal     (/ newton (* meter meter)) (pa) "Pa") ))
+
 (define-units 'current '((ampere     1       (amperes amps amp) "A")
 			 (milliampere     (* milli ampere) (milliamp milliamps ma) "mA")
 			 (microampere     (* micro ampere) (microamp microamps ua) "\\mu A")))
@@ -38,11 +44,14 @@
       (celsius     1.0       (celsius) "°C")
       (rankine     5/9       ()) ))
 
+(define-units 'charge
+    '((coulomb     (* ampere second)     (coul coulombs) "C")))
 
-;; pq utility
-(defun pq-change-unit (pq unit)
-  (make-pq (pqval pq) unit))
+;; (antik::define-derived-dimensions
+;;     '((elastic-costant (/ force length))))
 
+;; (define-units 'elastic-costant
+;;     '((si-elastic-costant (/ newton meter) (newton/meter N/m) "N/m")))
 
 ;; print number
 
@@ -80,6 +89,7 @@
        (if (listp print-names)
 	   (first print-names)
 	   print-names)))
+    ((stringp unit) unit)
     ((eql '/ (first unit)) (format nil "~a/~a" (print-unit (second unit)) (print-unit (third unit))))
     ((eql 'expt (first unit)) (format nil "~a^{~a}" (print-unit (second unit)) (print-unit (third unit))))
     ((eql '* (first unit)) (format nil "~a\\ ~a" (print-unit (second unit)) (print-unit (third unit))))
@@ -105,13 +115,14 @@
 	     :initform 0)
    (s-o-u :accessor pq-format-s-o-u
 	  :initarg :s-o-u
-	  :initform (list :si :deg))
+	  :initform *s-o-u*)
    (new-unit :accessor pq-format-new-unit
        :initarg :new-unit
        :initform nil)
    ))
 
-(defun pq-format (pq &key (precision 3) (exponent 0) (s-o-u (list :si :deg)) (new-unit nil))
+
+(defun pq-format (pq &key precision (exponent 0 exponent-p) s-o-u (new-unit nil new-unit-p))
   "format the physical quantity"
   (make-instance 'pq-format :pq pq :precision precision :exponent exponent :s-o-u s-o-u :new-unit new-unit)
   )
