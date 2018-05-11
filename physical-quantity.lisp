@@ -122,7 +122,7 @@
    ))
 
 
-(defun pq-format (pq &key precision (exponent 0 exponent-p) s-o-u (new-unit nil new-unit-p))
+(defun pq-format (pq &key (precision 3) (exponent 0 exponent-p) (s-o-u *s-o-u*) (new-unit nil new-unit-p))
   "format the physical quantity"
   (make-instance 'pq-format :pq pq :precision precision :exponent exponent :s-o-u s-o-u :new-unit new-unit)
   )
