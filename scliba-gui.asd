@@ -8,6 +8,6 @@
 				      :serial t
 				      :components ((:file "package")
 						   (:file "scliba-gui")
-                                                   ;; (:file "climacs-scliba-syntax")
+                                                   (:file "climacs-scliba-syntax")
 						   ))))
 

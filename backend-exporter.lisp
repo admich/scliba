@@ -36,6 +36,11 @@
 	 (:body (call-next-method))))
       (call-next-method)))
 
+(defmacro generate-export-document-tex (name)
+  
+  (let ((str (format nil "\\~a\\ " (string-downcase (symbol-name name)))))
+      `(defmethod export-document ((document ,name) (backend mixin-context-backend))
+	 (format *outstream* ,str))))
 
 (defmethod export-document :before ((document hbox) (backend aut-context-backend))
   (format *outstream* "\\hbox{ "))
@@ -48,23 +53,25 @@
 (defmethod export-document :before ((document vss) (backend aut-context-backend))
   (format *outstream* "\\vss "))
 
+(generate-export-document-tex hfil)
+(generate-export-document-tex hfill)
 
 (defmethod export-document :before ((document framed) (backend aut-context-backend))
-  (with-document-argument (context) document
+  (with-document-arguments (context) document
     (format *outstream* "\\framed~@[[~a]~]{ " context)))
 
 (defmethod export-document :after ((document framed) (backend aut-context-backend))
   (format *outstream* "} "))
 
 (defmethod export-document :before ((document inframed) (backend aut-context-backend))
-  (with-document-argument (context) document
+  (with-document-arguments (context) document
     (format *outstream* "\\inframed~@[[~a]~]{ " context)))
 
 (defmethod export-document :after ((document inframed) (backend aut-context-backend))
   (format *outstream* "} "))
 
 (defmethod export-document :before ((document inmargin) (backend aut-context-backend))
-  (with-document-argument (margin) document
+  (with-document-arguments (margin) document
     (let ((context-com
 	   (case margin
 	     (:right "inright")
@@ -170,6 +177,13 @@
 (defmethod export-document :after ((document bf) (backend mixin-context-backend))
   (format *outstream*"}"))
 
+(defmethod export-document :before ((document underbar) (backend mixin-context-backend))
+  (format *outstream*"{\\underbar "))
+
+(defmethod export-document :after ((document underbar) (backend mixin-context-backend))
+  (format *outstream*"}"))
+
+
 (defmethod export-document :before ((document it) (backend mixin-context-backend))
   (format *outstream*"{\\it "))
 (defmethod export-document :after ((document it) (backend mixin-context-backend))
@@ -214,31 +228,52 @@
   )
 
 ;;;; TABLE
+(defun context-option (&rest args)
+  (let ((firstp t))
+    (with-output-to-string (str)
+      (format str "[")
+      (loop for opt in args
+	    unless (string= opt "") do
+	      (unless firstp (format str ","))
+	      (format str "~a" opt)
+	      (when firstp (setf firstp nil)))
+      (format str "]"))))
+
+(defun context-frame (frame-list)
+  (let ((firstp t)
+	(labels '("left" "top" "right" "bottom")))
+    (with-output-to-string (str)
+      (loop for i in frame-list
+	    and label in labels
+	     do
+	      (unless firstp (format str ","))
+	      (format str "~aframe=~:[off~;on~]" label i)
+	      (when firstp (setf firstp nil))))))
+
 (defun setup-context-table-align (align)
   (loop for x in align
-     for i from 1 upto 100
-     with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
-     collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
+	for i from 1 upto 100
+	with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
+	collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
 
 
 (defmethod export-document :before ((document table) (backend mixin-context-backend))
-  (with-document-argument (frame stretch align caption) document
+  (with-document-arguments (frame stretch align caption split) document
     (when caption (format *outstream* "~%~%{\\bf ~a}\\blank~%" caption))
-    (format *outstream* "~& \\bTABLE[frame=~:[off~;on~]~:[~;,option=stretch~]] ~%" frame stretch)
+    (format *outstream* "~& \\bTABLE~a~%" (context-option (format nil "frame=~:[off~;on~]" frame ) (format nil "~:[~;option=stretch~]" stretch) (format nil "~:[~;split=yes~]" split)))
     (when align
       (loop for str in (setup-context-table-align align) do
-	   (format *outstream* str)))
-    ))
+	(format *outstream* str)))))
 
 (defmethod export-document :after ((document table) (backend mixin-context-backend))
-  (format *outstream*"~&\\eTABLE~%"))
+  (format *outstream*"~&\\eTABLE~%~%~%"))
 
 (defmethod export-document ((document table) (backend html-backend))
   (html-output
     (:table (call-next-method))))
 
 (defmethod export-document :before ((document table-row) (backend mixin-context-backend))
-  (with-document-argument (context) document
+  (with-document-arguments (context) document
     (format *outstream*   (output-context-with-option "\\bTR" context))))
 
 (defmethod export-document :after ((document table-row) (backend mixin-context-backend))
@@ -249,9 +284,8 @@
     (:tr (call-next-method))))
 
 (defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
-  
-  (let ((nc (get-argument document :nc)))
-    (format *outstream* "\\bTD ")))
+  (with-document-arguments (nc frame) document
+    (format *outstream* "\\bTD~a " (context-option (format nil "~@[nc=~d~]" nc) (context-frame frame)))))
 
 (defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
   (format *outstream*"\\eTD "))

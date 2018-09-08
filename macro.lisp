@@ -1,7 +1,7 @@
 (in-package :scliba)
 
 
-(defmacro with-document-argument (args document &body body)
+(defmacro with-document-arguments (args document &body body)
   (let ((in (gensym)))
     `(let ((,in ,document))
          ;; ,@(maybe-rebinding in documents 'with-slots)
@@ -74,11 +74,11 @@
 
 #|
 (let ((doc (itemize (:a 1 :b 2))))
-  (with-document-argument ((a :a) (b :b)) doc
+  (with-document-arguments ((a :a) (b :b)) doc
     (format t "a: ~a b: ~a" a b)))
 
 (let ((doc (itemize (:a 2 :b 3))))
-  (with-document-argument (a b) doc
+  (with-document-arguments (a b) doc
     (format t "a: ~a b: ~a" a b)))
 
 |#

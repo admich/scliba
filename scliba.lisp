@@ -82,18 +82,17 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 
 (defun compila-context (file &key (mode nil) (output nil))
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-			       (let ((command (format nil "context --purgeall ~@[--mode=~a~]  ~@[--result=~a~] ~a" mode output file)))
+    (let* ((filetex (pathname-name file))
+	   (command (format nil "context --purgeall ~@[--mode=~a~]  ~@[--result=~a~] ~a" mode output filetex)))
 				 (print command)
 				 (uiop:run-program command :output t)
 				 (or output (merge-pathnames (make-pathname :type "pdf") file)))))	
 
 (defun view-pdf (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
-			       (let* ((file (if (string= "pdf" (pathname-type file))
-						file
-						(merge-pathnames (make-pathname :type "pdf") file)))
-				      (command (format nil "~a ~a &" *command-pdf-viewer* file)))
-				 (uiop:run-program command :output t))))
+    (let* ((file (merge-pathnames (make-pathname :type "pdf") (pathname-name file)))
+	   (command (format nil "~a ~a &" *command-pdf-viewer* file)))
+      (uiop:run-program command :output t))))
 
 (defun view-html (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))

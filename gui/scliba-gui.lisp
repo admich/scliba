@@ -274,6 +274,11 @@
   (format (find-pane-named *application-frame* 'inter) "Filtro: ~a" (car arg))
   (update-list-exercises))
 
+(define-scliba-gui-command (com-open-directory :name t :menu t)
+    ((directory 'pathname :prompt "Directory: "))
+  (format *query-io* "~a" directory))
+
+
 (define-scliba-gui-command (com-quit :name t :menu t :keystroke (#\q :control)) ()
   (frame-exit *application-frame*))
 

@@ -76,18 +76,18 @@
 (defmethod export-document :before ((document formulario) (backend mixin-context-backend))
   (format *outstream* "~&\\setupheader[state=stop]~%"))
 (defmethod export-document :before ((document formulario) backend)
-  (with-document-argument (title) document
+  (with-document-arguments (title) document
     (export-document (title (format nil "Formulario: ~a" (export-document-on-string title backend))) backend)))
 
 ;; (def-authoring-tree argomento)
 
 ;; (defmethod export-document :before ((document argomento) backend)
-;;   (with-document-argument (title) document
+;;   (with-document-arguments (title) document
 ;;     (export-document (list (newline ())
 ;; 			   (bf (format nil "~a" (export-document-on-string title backend))) (newline ())) backend)))
 
 ;; (defmethod export-document  ((document argomento) backend)
-;;   (with-document-argument (title) document
+;;   (with-document-arguments (title) document
 ;;     (export-document (framedtext ()
 ;; 		       (list (newline ())
 ;; 			     (bf (format nil "~a" (export-document-on-string title backend))) (newline ()) (authoring-tree-body document))) backend)))

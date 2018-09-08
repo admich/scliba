@@ -67,6 +67,8 @@
 ;;;; TEX
 (def-authoring-tree hbox)
 (def-authoring-tree hss)
+(def-authoring-tree hfil)
+(def-authoring-tree hfill)
 (def-authoring-tree vss)
 
 ;;;; input
@@ -236,6 +238,8 @@
 
 (def-simple-authoring-tree-fn it)
 
+(def-simple-authoring-tree-fn underbar)
+
 (def-simple-authoring-tree-fn roman)
 
 (def-simple-authoring-tree-fn sans-serif)
@@ -348,6 +352,12 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (def-authoring-tree itemize)
 
 (def-authoring-tree item)
+
+(defmacro simple-itemize (arguments &body body)
+  
+  `(itemize (,@arguments)
+     ,@(loop for i in body collect (item () i))
+     ))
 
 ;;;; 
 

@@ -119,7 +119,7 @@
 	   #:enumerated-n
 	   #:html-output
 	   #:*i-random*
-	   #:with-document-argument
+	   #:with-document-arguments
 	   #:newline
 	   #:nbsp
 	   #:compila-guarda
@@ -145,7 +145,11 @@
    #:pq-exponent
    #:pq-new-unit
    #:pq-s-o-u
-   #:pq-precision))
+   #:pq-precision
+   #:hfil
+   #:hfill
+   #:underbar
+   #:simple-itemize))
 
 ; to use antik package without name conflict
 (antik:make-user-package :scliba)
