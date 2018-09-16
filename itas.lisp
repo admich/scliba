@@ -70,7 +70,8 @@
     (export-document
      (table (:frame t :stretch t)
        (table-row ()
-	 (table-cell (:nc 3) (bf (format nil "MODULO N°~d " (counter-modulo-val))) title (hfill ()) (bf (format nil "  durata ore ~d" (durata-ore document)))))
+	 (table-cell (:nc 3) (bf (format nil "MODULO N°~d " (counter-modulo-val))) title (hfill ()) (bf (format nil "  durata ore ~d" (durata-ore document)))) 
+	 )
        (table-row ()
 	 (table-cell (:nc 3)  descrizione))
        (table-row ()
@@ -93,7 +94,7 @@
     (export-document
      (table (:frame t :stretch t :split split )
        (table-row ()
-	 (table-cell (:nc 2) (bf (format nil "UNITA' DIDATTICA N°~d.~d " (counter-modulo-val) (counter-unita-val))) title (hfill ()) (bf (format nil " durata ore ~d" durata))))
+	 (table-cell (:nc 2) (bf (format nil "UNITÀ DIDATTICA N°~d.~d " (counter-modulo-val) (counter-unita-val))) title (hfill ()) (bf (format nil " durata ore ~d" durata))))
        (table-row ()
 	 (table-cell () (bf "Attività"))
 	 (table-cell () (bf "Obiettivi")))
@@ -178,7 +179,7 @@
     ))
 
 
-(setf *testo-valutazione*
+(defparameter *testo-valutazione*
       "Scaturisce da verifiche orali e scritte ,dalla considerazione
        dell’atteggiamento, dell’impegno (in particolare per le attività in
        laboratorio si terrà conto dell’autonomia nell’operare e della
@@ -227,13 +228,3 @@
   (format t "~{~a~}~%" (loop for i below 50 collect "-"))
   (format t "~41@a" (durata-ore dida)))
 
-(defparameter *modalita-valutazione* (simple-itemize ()
-				       "Interrogazioni orali"
-				       "Test (quesiti a risposta multipla o breve risposta; problemi)"
-				       "Progressi, partecipazione e impegno"))
-
-(defparameter *metodologie* (simple-itemize ()
-				 "Lezioni frontali alternate a lezioni partecipate (problem solving)"
-"Esercitazioni guidate individuali o a gruppi svolte in classe"
-"Semplici esperienze in laboratorio o in classe (didattica laboratoriale)"
-				 "Strumenti:: libro di testo, appunti, schede/test per le prove di verifica o esercitazioni di laboratorio"))
