@@ -99,7 +99,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 			       (let ((command (format nil "~a ~a &" *command-html-viewer* file)))
 				 (uiop:run-program command :output t))))
 
-(defun compila-guarda (filelisp backend)
+(defun compila-guarda (filelisp &optional (backend *default-backend*))
   (funcall (compose (backend-view-fn backend) (backend-compile-fn backend)) filelisp backend))
 
 (defun compila (filelisp backend)
