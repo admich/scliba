@@ -13,8 +13,7 @@
   ()
   (:name "sCLiba")
   (:pathname-types "scl")
-  (:command-table scliba-table)
-  )
+  (:command-table scliba-table))
 
 (defmethod name-for-info-pane ((syntax scliba-syntax) &key view)
   (format nil "sCLiba~@[:~(~A~)~]"

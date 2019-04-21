@@ -83,7 +83,7 @@
 (defvar *i-random* 0)
 (defun choose-one-of (seq)
   "If *randomize* is true choose at random from sequence otherwise return the first element in the list"
-  (if *randomize* (random-elt seq) (first-elt seq)))
+  (if *randomize* (alexandria:random-elt seq) (alexandria:first-elt seq)))
 
 (defclass random-body (authoring-tree)
   ())
@@ -382,6 +382,8 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 (def-authoring-tree mpcode)
 
 
+;;;; space
+(def-authoring-tree vspace)
 
 ;;;; inmargin
 (def-authoring-tree inmargin)
@@ -397,6 +399,14 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
       collect (table-row ()
 		(loop for cell in row collect
 		     (table-cell () cell)))))
+
+;; (defmacro simple-table-by-rows (args list)
+;;   (table () 
+;;     `(loop for row in ,list
+;; 	collect (table-row ()
+;; 		  (loop for cell in row collect
+;; 		       (table-cell () cell))))))
+
 ;;;; MATH
 (def-simple-authoring-tree imath (authoring-tree mixin-math))
 

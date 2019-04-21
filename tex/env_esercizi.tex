@@ -107,63 +107,63 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METAPOST
-\startMPinclusions
-  input metaobj;
+% \startMPinclusions
+%   input metaobj;
 
-  vardef markanglebetween (expr endofa, endofb, common, length, str) =
-        save curve, where ; path curve ; numeric where ;
-        where := turningnumber (common--endofa--endofb--cycle) ;
-        curve := (unitvector(endofa-common){(endofa-common) rotated (where*90)}
-        .. unitvector(endofb-common)) scaled length shifted common ;
-        draw thefreelabel(str,point .5 of curve,common) withcolor black ;
-       curve
-  enddef ;
+%   vardef markanglebetween (expr endofa, endofb, common, length, str) =
+%         save curve, where ; path curve ; numeric where ;
+%         where := turningnumber (common--endofa--endofb--cycle) ;
+%         curve := (unitvector(endofa-common){(endofa-common) rotated (where*90)}
+%         .. unitvector(endofb-common)) scaled length shifted common ;
+%         draw thefreelabel(str,point .5 of curve,common) withcolor black ;
+%        curve
+%   enddef ;
 
-  u=5mm;
-  def grid(expr xi,xf,yi,yf)=
-    for i=xi+1 upto xf-1:
+%   u=5mm;
+%   def grid(expr xi,xf,yi,yf)=
+%     for i=xi+1 upto xf-1:
       
-      draw (i*u,yi*u)..(i*u,yf*u) withcolor .7white ;
-    endfor
-    for i=yi+1 upto yf-1:
-      draw (xi*u,i*u)..(xf*u,i*u) withcolor .7white;
-    endfor
-  enddef;
+%       draw (i*u,yi*u)..(i*u,yf*u) withcolor .7white ;
+%     endfor
+%     for i=yi+1 upto yf-1:
+%       draw (xi*u,i*u)..(xf*u,i*u) withcolor .7white;
+%     endfor
+%   enddef;
   
-  def assi(expr xi,xf,yi,yf)=
-    drawarrow (xi*u,0)--(xf*u,0);
-    drawarrow (0,yi*u)--(0,yf*u);
-    label.bot(btex $x$ etex, (xf*u,0));
-    label.lft(btex $y$ etex, (0,yf*u));
-  enddef;
+%   def assi(expr xi,xf,yi,yf)=
+%     drawarrow (xi*u,0)--(xf*u,0);
+%     drawarrow (0,yi*u)--(0,yf*u);
+%     label.bot(btex $x$ etex, (xf*u,0));
+%     label.lft(btex $y$ etex, (0,yf*u));
+%   enddef;
   
-  def labelgriglia(expr xi,xf,yi,yf)=
-    for i=xi+1 upto xf-1:
-      draw (i*u,-2pt)--(i*u,2pt);
-      draw textext(decimal(i)) scaled .8 shifted (i*u-3pt,-5pt);    
- %     label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (i*u,0));
-    endfor
-    for i=yi+1 upto yf-1:
-      draw (-2pt,i*u)--(2pt,i*u);
-      draw textext(decimal(i)) scaled .8 shifted (-6pt,i*u+4pt);      
-%      label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (0,i*u));
-    endfor;
+%   def labelgriglia(expr xi,xf,yi,yf)=
+%     for i=xi+1 upto xf-1:
+%       draw (i*u,-2pt)--(i*u,2pt);
+%       draw textext(decimal(i)) scaled .8 shifted (i*u-3pt,-5pt);    
+%  %     label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (i*u,0));
+%     endfor
+%     for i=yi+1 upto yf-1:
+%       draw (-2pt,i*u)--(2pt,i*u);
+%       draw textext(decimal(i)) scaled .8 shifted (-6pt,i*u+4pt);      
+% %      label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (0,i*u));
+%     endfor;
 
-  enddef;
-  def righello(expr strt, stp, btick, stick, meas)=
-    draw (-5+strt*u,0)--(-5+strt*u,-1cm)--(stp*u+5,-1cm)--(stp*u+5,0)--cycle;
-    for i= strt step btick until stp:
-      draw (i*u,0)--(i*u,-0.3cm);
-      label.bot(decimal i,(i*u,-0.3cm));
-    endfor
-    for i=strt step stick until stp:
-      draw (i*u,0)--(i*u,-0.2cm);
-    endfor;
-    label(btex mm etex,((strt+stp)*u/2,-0.8cm));
-    draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
-enddef;
+%   enddef;
+%   def righello(expr strt, stp, btick, stick, meas)=
+%     draw (-5+strt*u,0)--(-5+strt*u,-1cm)--(stp*u+5,-1cm)--(stp*u+5,0)--cycle;
+%     for i= strt step btick until stp:
+%       draw (i*u,0)--(i*u,-0.3cm);
+%       label.bot(decimal i,(i*u,-0.3cm));
+%     endfor
+%     for i=strt step stick until stp:
+%       draw (i*u,0)--(i*u,-0.2cm);
+%     endfor;
+%     label(btex mm etex,((strt+stp)*u/2,-0.8cm));
+%     draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
+% enddef;
 
-\stopMPinclusions
+% \stopMPinclusions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% esercizi
 

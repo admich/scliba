@@ -141,3 +141,7 @@
 			    unit)))
 	  (unless *math* (setf str (concatenate 'string "$" str "$")))
 	  (format *outstream* "~a" str))))))
+
+(defun pq-change-unit (pq new-unit)
+  "Return a new physical-quantity with the same value of PQ and NEW-UNIT as unit"
+  (make-pq (pqval pq) new-unit))

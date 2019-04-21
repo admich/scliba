@@ -233,7 +233,7 @@
     (with-output-to-string (str)
       (format str "[")
       (loop for opt in args
-	    unless (string= opt "") do
+	 unless (or (null opt) (string= opt "")) do
 	      (unless firstp (format str ","))
 	      (format str "~a" opt)
 	      (when firstp (setf firstp nil)))
@@ -250,14 +250,19 @@
 	      (format str "~aframe=~:[off~;on~]" label i)
 	      (when firstp (setf firstp nil))))))
 
+
+(defun context-align (lisp-align)
+  (let ((possibilities '((:l . "flushleft") (:c . "middle") (:r . "flushright"))))
+    (and lisp-align (format nil "align=~a" (alexandria:assoc-value  possibilities lisp-align)))))
+
 (defun setup-context-table-align (align)
   (loop for x in align
-	for i from 1 upto 100
-	with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
-	collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
+     for i from 1 upto 100
+     with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
+     collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
 
 
-(defmethod export-document :before ((document table) (backend mixin-context-backend))
+(defmethod export-document :before ((document table) (backend mixin-context-natural-table-backend))
   (with-document-arguments (frame stretch align caption split) document
     (when caption (format *outstream* "~%~%{\\bf ~a}\\blank~%" caption))
     (format *outstream* "~& \\bTABLE~a~%" (context-option (format nil "frame=~:[off~;on~]" frame ) (format nil "~:[~;option=stretch~]" stretch) (format nil "~:[~;split=yes~]" split)))
@@ -265,35 +270,62 @@
       (loop for str in (setup-context-table-align align) do
 	(format *outstream* str)))))
 
-(defmethod export-document :after ((document table) (backend mixin-context-backend))
+(defmethod export-document :after ((document table) (backend mixin-context-natural-table-backend))
   (format *outstream*"~&\\eTABLE~%~%~%"))
+
+(defmethod export-document :before ((document table) (backend mixin-context-xtable-backend))
+  (with-document-arguments (frame stretch  caption split) document
+    (when caption (format *outstream* "~%~%{\\bf ~a}\\blank~%" caption))
+    (format *outstream* "~& \\startxtable~a~%" (context-option (format nil "frame=~:[off~;on~]" frame) (format nil "~:[~;option=stretch~]" stretch) (format nil "~:[~;split=yes~]" split)))))
+
+(defmethod export-document :after ((document table) (backend mixin-context-xtable-backend))
+  (format *outstream*"~&\\stopxtable~%~%~%"))
 
 (defmethod export-document ((document table) (backend html-backend))
   (html-output
     (:table (call-next-method))))
 
-(defmethod export-document :before ((document table-row) (backend mixin-context-backend))
+(defmethod export-document :before ((document table-row) (backend mixin-context-natural-table-backend))
   (with-document-arguments (context) document
     (format *outstream*   (output-context-with-option "\\bTR" context))))
 
-(defmethod export-document :after ((document table-row) (backend mixin-context-backend))
+(defmethod export-document :after ((document table-row) (backend mixin-context-natural-table-backend))
   (format *outstream*"\\eTR~%"))
+
+(defmethod export-document :before ((document table-row) (backend mixin-context-xtable-backend))
+  (with-document-arguments (context) document
+    (format *outstream*   (output-context-with-option "\\startxrow" context))))
+
+(defmethod export-document :after ((document table-row) (backend mixin-context-xtable-backend))
+  (format *outstream*"\\stopxrow~%"))
+
 
 (defmethod export-document ((document table-row) (backend html-backend))
   (html-output
     (:tr (call-next-method))))
 
-(defmethod export-document :before ((document table-cell) (backend mixin-context-backend))
+(defmethod export-document :before ((document table-cell) (backend mixin-context-natural-table-backend))
   (with-document-arguments (nc frame) document
     (format *outstream* "\\bTD~a " (context-option (format nil "~@[nc=~d~]" nc) (context-frame frame)))))
 
-(defmethod export-document :after ((document table-cell) (backend mixin-context-backend))
+(defmethod export-document :after ((document table-cell) (backend mixin-context-natural-table-backend))
   (format *outstream*"\\eTD "))
+
+(defmethod export-document :before ((document table-cell) (backend mixin-context-xtable-backend))
+  (with-document-arguments (nc frame align) document
+    (format *outstream* "\\startxcell~a " (context-option (format nil "~@[nx=~d~]" nc) (context-frame frame) (context-align align)))))
+
+(defmethod export-document :after ((document table-cell) (backend mixin-context-xtable-backend))
+  (format *outstream*"\\stopxcell "))
+
 
 (defmethod export-document ((document table-cell) (backend html-backend))
   (html-output
     (:td (call-next-method))))
 
+;;;; SPACE
+(defmethod export-document :before ((document vspace) (backend mixin-context-backend))
+  (format *outstream* "~%\\blank ~%~%"))
 ;;;; MATH
 (defmethod export-document :before ((document imath) (backend mixin-context-backend))
   (format *outstream*"$"))

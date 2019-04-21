@@ -21,8 +21,13 @@
 
 
 (defparameter *mpinclusion*
-  "\\startMPinclusions
-  input metaobj;
+  "
+\\setupMPinstance[method=decimal]
+\\startMPinclusions
+  input metaobj;;
+    string LaTeXsetup ; LaTeXsetup := \"\";
+    input \"makecirc.mp\";
+    vardef latex(expr t) = textext(t) enddef ;
 
   vardef markanglebetween (expr endofa, endofb, common, length, str) =
         save curve, where ; path curve ; numeric where ;
@@ -33,7 +38,7 @@
        curve
   enddef ;
 
-  u=5mm;
+  u:=5mm;
   def grid(expr xi,xf,yi,yf)=
     for i=xi+1 upto xf-1:
       
@@ -77,6 +82,47 @@
     draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
 enddef;
 
+def millimetrata (expr x, y)=
+    u := 1mm;
+    xmax:= 10 * x;
+    ymax := 10 * y;
+    color cc;
+    cc := .5[red,white];
+    pickup pencircle scaled 0.1;
+% mm
+    for i=0 step 1 until ymax:
+       draw (0,i)*u -- (xmax,i)*u withcolor cc;
+    endfor;
+    for i=0 step 1 until xmax:
+       draw (i,0)*u -- (i,ymax)*u withcolor cc;;
+    endfor;
+
+pickup pencircle scaled .5;
+% 5mm
+for i=0 step 5 until ymax:
+  draw (0,i)*u -- (xmax,i)*u withcolor cc;
+endfor;
+for i=0 step 5 until xmax:
+  draw (i,0)*u -- (i,ymax)*u withcolor cc;;
+endfor;
+
+pickup pencircle scaled 1;
+% 10mm
+for i=0 step 10 until ymax:
+  draw (0,i)*u -- (xmax,i)*u withcolor cc;
+endfor;
+for i=0 step 10 until xmax:
+  draw (i,0)*u -- (i,ymax)*u withcolor cc;;
+endfor;
+    
+enddef;
+
+def puntoconerrore (expr x, y, dx, dy)=
+    draw ((x-dx)*u,(y-dy)*u)--((x-dx)*u,(y+dy)*u)--((x+dx)*u,(y+dy)*u)--((x+dx)*u,(y-dy)*u)--cycle;
+    drawdot (x*u,y*u) withpen pencircle scaled 3 ;
+enddef;
+
+
 \\stopMPinclusions")
 
 (def-authoring-tree pedb-document (authoring-document) :documentation "A pebb root document")
@@ -117,6 +163,7 @@ enddef;
 ;; ~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
 
 (defmethod export-document :before ((document compito) (backend context-backend))
+  (write-string *mpinclusion* *outstream*)
   (format *outstream*"
 \\compito[title=~A,scuola=none]
 \\makecompitotitle
@@ -140,12 +187,19 @@ enddef;
   (export-document (title (get-argument document :title)) backend))
 
 
+(defmacro infoform-1line ()
+  "Form nome e cognome per compiti in una riga"
+  `(table (:widths '(0.5 0.5) :frame nil :stretch t)
+     (table-row ()
+       (table-cell () "Alunno: " (hlinefill ()))
+       (table-cell () "Classe: " (hlinefill ()) "Data: " (hlinefill ())))))
+
 (defmacro infoform ()
   "Form nome e cognome per compiti"
   `(table (:widths '(0.5 0.5) :frame nil :stretch t)
      (table-row ()
        (table-cell () "Nome: " (hlinefill ()))
-       (table-cell () "Classe: "(hlinefill ())))
+       (table-cell () "Classe: " (hlinefill ())))
      (table-row ()
        (table-cell () "Cognome: " (hlinefill ()))
        (table-cell () "Data: " (hlinefill ())))))
