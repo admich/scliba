@@ -7,8 +7,6 @@
      (defun ,name (&key (precision ,precision) (exponent ,exponent) (s-o-u ',s-o-u) (new-unit ,new-unit))
        (pq-format ,name :precision precision :exponent exponent :s-o-u s-o-u :new-unit new-unit))))
 
-
-
 (define-physical-constant big-g
     #_6.67408d-11_N*m^2/kg^2)
 
@@ -31,10 +29,6 @@
     #_1.602176565d-19_coulomb)
 
 
-(defmacro tabella-costanti (nome lista-valori)
-  1)
-
-
 (defmacro tabella-costanti (name init)
   (let ((table-name (alexandria:symbolicate '* name '-tabella*)))
     `(progn
@@ -43,7 +37,7 @@
          (setf (gethash (car x) ,table-name) (cdr x)))
        (defun ,name (element)
          (gethash element ,table-name))
-       (export ',name))))
+       (export (list ',name ',table-name)))))
 
 (tabella-costanti densita '(("mercurio" . #_1.36e4_kg/m^3)
                             ("alluminio" . #_2.7e3_kg/m^3)))
@@ -94,3 +88,31 @@
 			        ("lana" . #_0.04_W/m-K)
 			        ("poliuretano" . #_0.03_W/m-K)
 			        ("aria" . #_0.02_W/m-K)))
+
+(tabella-costanti resistivita
+                  '(("argento" . #_1.6e-8_ohm-m)
+			        ("rame" . #_1.7e-8_ohm-m)
+			        ("oro" . #_2.4e-8_ohm-m)
+			        ("alluminio" . #_2.7e-8_ohm-m)
+			        ("tungsteno" . #_5.6e-8_ohm-m)
+                    ("ferro" . #_9.7e-8_ohm-m)
+                    ("stagno" . #_1.1e-7_ohm-m)
+                    ("costantana" . #_4.9e-7_ohm-m)
+                    ("germanio" .  #_4.6e-1_ohm-m)
+                    ("silicio" . #_6.4e2_ohm-m)
+                    ("vetro" . (#_1e11_ohm-m . #_1e15_ohm-m))
+                    ("legno" . (#_1e14_ohm-m . #_1e16_ohm-m))
+                    ("quarzo" . #_7.5e17_ohm-m)
+                    ("teflon" . (#_1e23_ohm-m . #_1e25_ohm-m))))
+
+(tabella-costanti resistivita-coefficiente-termico
+                  '(("argento" . #_0.0038_/K)
+			        ("rame" . #_0.00404_/K)
+			        ("oro" . #_0.0034_/K)
+			        ("alluminio" . #_0.0039_/K)
+			        ("tungsteno" . #_0.0045_/K)
+                    ("ferro" . #_0.005_/K)
+                    ("stagno" . #_0.0045_/K)
+                    ("costantana" . #_0.000008_/K)
+                    ("germanio" .  #_-0.048_/K)
+                    ("silicio" . #_-0.075_/K)))
