@@ -122,12 +122,19 @@
    ))
 
 
-(defun pq-format (pq &key (precision 3) (exponent 0 exponent-p) (s-o-u *s-o-u*) (new-unit nil new-unit-p))
+(defgeneric pq-format (pq &key &allow-other-keys))
+
+(defmethod pq-format ((pq physical-quantity) &key (precision 3) (exponent 0 exponent-p) (s-o-u *s-o-u*) (new-unit nil new-unit-p) &allow-other-keys)
   "format the physical quantity"
-  (make-instance 'pq-format :pq pq :precision precision :exponent exponent :s-o-u s-o-u :new-unit new-unit)
-  )
+  (make-instance 'pq-format :pq pq :precision precision :exponent exponent :s-o-u s-o-u :new-unit new-unit))
 
+(defmethod pq-format (pq  &key  &allow-other-keys)
+  "format the physical quantity"
+  "--")
 
+(defmethod pq-format ((pq cons)  &rest keys &key  &allow-other-keys )
+  "format the physical quantity"
+  (list "["(apply #'make-instance 'pq-format :pq (car pq)  keys) " -- " (apply #'make-instance 'pq-format :pq (cdr pq)  keys) "]"))
 
 (defmethod export-document ((document pq-format) (backend mixin-context-backend))
   (with-slots (pq precision exponent s-o-u new-unit) document
