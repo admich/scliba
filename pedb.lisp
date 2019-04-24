@@ -245,7 +245,7 @@ enddef;
   (format *outstream* "~&{\\printsoluzioni}~%"))
 
 (defmethod export-document ((document soluzioni) (backend autarchy-backend))
-  (format *outstream* "{\\tfc Soluzioni. ~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
+  (format *outstream* "~&~%~%{\\tfc Soluzioni. ~%~%}~a" (get-output-stream-string (cdr (assoc 'soluzione *buffers*)))))
 
 (defparameter *last-sol* nil)
 (defclass last-sol (authoring-tree)
