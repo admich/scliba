@@ -1,7 +1,7 @@
 ;;;;; backend.lisp
 (in-package #:scliba)
 
-(defparameter *default-backend* nil)
+
 
 (defclass backend ()
   ((outstream :initarg :stream
@@ -57,4 +57,5 @@
   `(who:with-html-output (*outstream* nil :indent t)
 			 (who:htm ,@body)))
 
-(setf *default-backend* (make-instance 'context-backend))
+(defparameter *default-backend* (make-instance 'aut-context-backend))
+
