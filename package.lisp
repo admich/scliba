@@ -74,6 +74,7 @@
 	       #:math
 	       #:ref
 	       #:figure
+           #:table-float
 	       #:mpcode
 	       #:table
 	       #:table-row

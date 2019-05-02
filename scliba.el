@@ -1,5 +1,13 @@
 (require 'cl)
 (load "skeletons-cl-authoring" t)
+
+(defun scliba-compila-guarda-file ()
+  (interactive)
+  (let* ((file-name (buffer-file-name))
+         (comand (concat "(scliba:compila-guarda \"" file-name "\")")))
+    (slime-eval `(swank:eval-and-grab-output ,comand))
+    (message "Compilato file %s" file-name)))
+
 (defun pedb-store-dir ()
   (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-directory*)"))) 1 -1))
 

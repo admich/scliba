@@ -22,12 +22,13 @@
 
 (defparameter *mpinclusion*
   "
+\\def \\textsf #1{\\ss #1}
 \\setupMPinstance[method=decimal]
 \\startMPinclusions
   input metaobj;;
-    string LaTeXsetup ; LaTeXsetup := \"\";
+  string LaTeXsetup ; LaTeXsetup := \"\";
     input \"makecirc.mp\";
-    vardef latex(expr t) = textext(t) enddef ;
+  vardef latex(expr t) = textext(t) enddef ;
 
   vardef markanglebetween (expr endofa, endofb, common, length, str) =
         save curve, where ; path curve ; numeric where ;

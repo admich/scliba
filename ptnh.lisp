@@ -79,6 +79,9 @@
   (with-document-arguments (title) document
     (export-document (title (format nil "Formulario: ~a" (export-document-on-string title backend))) backend)))
 
+(defmacro definizione-box ((title) &body body)
+  `(list (framedtext (:context "corner=00, width=local, background=color,backgroundcolor=gray") (bf ,title) (newline ()) ,@body)))
+
 ;; (def-authoring-tree argomento)
 
 ;; (defmethod export-document :before ((document argomento) backend)
@@ -103,11 +106,7 @@
   )
 
 (defun compila-guarda-ptnh (document &key (directory  (merge-pathnames "file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))
-  ;; (view-pdf (compila-context
-  ;; 	     (export-file (merge-pathnames document directory) backend)))
-
-   (compila-guarda (merge-pathnames document directory) backend)
-  )
+   (compila-guarda (merge-pathnames document directory) backend))
 
 
 ;;;; Old to remove

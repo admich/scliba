@@ -210,14 +210,22 @@
 (defmethod export-document ((document newcolumn) (backend mixin-context-backend))
   (format *outstream*"~&\\column~%"))
 
-(defmethod export-document ((document ref) (backend context-backend))
+(defmethod export-document ((document ref) (backend mixin-context-backend))
   (format *outstream*"\\in[~a]" (get-argument document :ref)))
 
-(defmethod export-document :before ((document figure) (backend context-backend))
-  (format *outstream*"\\placefigure[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption)))
 
-(defmethod export-document :after ((document figure) (backend context-backend))
-  (format *outstream*"}"))
+(defmethod export-document :before ((document table-float) (backend mixin-context-backend))
+  (format *outstream*"~&\\placetable[here][~a]{~A}{" (get-argument document :ref) (get-argument document :caption)))
+
+(defmethod export-document :after ((document table-float) (backend mixin-context-backend))
+  (format *outstream*"}~%"))
+
+
+(defmethod export-document :before ((document figure) (backend mixin-context-backend))
+  (format *outstream*"~&\\placefigure[~@[~a~]][~a]{~A}{" (or (get-argument document :place) "here") (get-argument document :ref) (get-argument document :caption)))
+
+(defmethod export-document :after ((document figure) (backend mixin-context-backend))
+  (format *outstream*"}~%"))
 
 (defmethod export-document :before  ((document mpcode) (backend mixin-context-backend))
   (format *outstream* "~&\\startMPcode~%")
@@ -252,7 +260,7 @@
 
 
 (defun context-align (lisp-align)
-  (let ((possibilities '((:l . "flushleft") (:c . "middle") (:r . "flushright"))))
+  (let ((possibilities '((:l . "flushleft") (:c . "middle") (:r . "flushright") (:lohi . "lohi"))))
     (and lisp-align (format nil "align=~a" (alexandria:assoc-value  possibilities lisp-align)))))
 
 (defun setup-context-table-align (align)

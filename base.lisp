@@ -377,6 +377,8 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree ref)
 
+(def-authoring-tree table-float)
+
 (def-authoring-tree figure)
 
 (def-authoring-tree mpcode)
