@@ -269,6 +269,10 @@
      with context-align = '((:l . "flushleft") (:c . "middle") (:r . "flushright"))
      collect (format nil "\\setupTABLE[column][~d][align=~a]~%" i (assoc-value  context-align x))))
 
+(defun context-multiple-align (align)
+  (let ((context-align '((:l . "flushleft") (:c . "middle") (:r . "flushright"))))
+    (format nil "~@[align={~{~a~^,~}}~]" (map 'list (lambda (x) (alexandria:assoc-value context-align x)) align))))
+
 
 (defmethod export-document :before ((document table) (backend mixin-context-natural-table-backend))
   (with-document-arguments (frame stretch align caption split) document
@@ -282,9 +286,9 @@
   (format *outstream*"~&\\eTABLE~%~%~%"))
 
 (defmethod export-document :before ((document table) (backend mixin-context-xtable-backend))
-  (with-document-arguments (frame stretch  caption split) document
+  (with-document-arguments (frame stretch  caption split align) document
     (when caption (format *outstream* "~%~%{\\bf ~a}\\blank~%" caption))
-    (format *outstream* "~& \\startxtable~a~%" (context-option (format nil "frame=~:[off~;on~]" frame) (format nil "~:[~;option=stretch~]" stretch) (format nil "~:[~;split=yes~]" split)))))
+    (format *outstream* "~& \\startxtable~a~%" (context-option (format nil "frame=~:[off~;on~]" frame) (format nil "~@[~a~]" (context-multiple-align align))  (format nil "~:[~;option=stretch~]" stretch) (format nil "~:[~;split=yes~]" split)))))
 
 (defmethod export-document :after ((document table) (backend mixin-context-xtable-backend))
   (format *outstream*"~&\\stopxtable~%~%~%"))
