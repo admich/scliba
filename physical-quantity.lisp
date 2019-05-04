@@ -65,17 +65,19 @@
 
 
 (defun number-format% (num &key (precision 3) (exponent 0) &allow-other-keys)
-  (multiple-value-bind (n exp) (number-parts num :precision precision)
-    (let* ((exponent (or exponent (number-exponent num)))
-           (k (- exp exponent))
-           (d (- precision k 1))
-           (fmt (format nil "~~,~d,~df" d k))
-           (strn% (format nil fmt n))
-           (strn (if (or (char= #\0 (elt (remove-if (lambda (x) (char= x #\-)) strn%) 0))
-                         (< 0 d))
-                     strn%
-                     (ppcre:regex-replace "\\..*" strn% ""))))
-      (ppcre:regex-replace "\\." (format nil "\\text{~a}~[~:;\\times 10^\{~a\}~]" strn exponent exponent) ","))))
+  (if (zerop num)
+      "0"
+      (multiple-value-bind (n exp) (number-parts num :precision precision)
+        (let* ((exponent (or exponent (number-exponent num)))
+               (k (- exp exponent))
+               (d (- precision k 1))
+               (fmt (format nil "~~,~d,~df" d k))
+               (strn% (format nil fmt n))
+               (strn (if (or (char= #\0 (elt (remove-if (lambda (x) (char= x #\-)) strn%) 0))
+                             (< 0 d))
+                         strn%
+                         (ppcre:regex-replace "\\..*" strn% ""))))
+          (ppcre:regex-replace "\\." (format nil "\\text{~a}~[~:;\\times 10^\{~a\}~]" strn exponent exponent) ",")))))
 
 
 (define-system-of-units si-my-mod (deg hz) :si)
