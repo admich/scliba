@@ -64,16 +64,17 @@
     (values-list parts)))
 
 
-(defun number-format% (num &key (precision 3) (exponent 0))
+(defun number-format% (num &key (precision 3) (exponent 0) &allow-other-keys)
   (multiple-value-bind (n exp) (number-parts num :precision precision)
-    (let* ((k (- exp exponent))
-	   (d (- precision k 1))
-	   (fmt (format nil "~~,~d,~df" d k))
-	   (strn% (format nil fmt n))
-	   (strn (if (or (char= #\0 (elt (remove-if (lambda (x) (char= x #\-)) strn%) 0))
-			 (< 0 d))
-		     strn%
-		     (ppcre:regex-replace "\\..*" strn% ""))))
+    (let* ((exponent (or exponent (number-exponent num)))
+           (k (- exp exponent))
+           (d (- precision k 1))
+           (fmt (format nil "~~,~d,~df" d k))
+           (strn% (format nil fmt n))
+           (strn (if (or (char= #\0 (elt (remove-if (lambda (x) (char= x #\-)) strn%) 0))
+                         (< 0 d))
+                     strn%
+                     (ppcre:regex-replace "\\..*" strn% ""))))
       (ppcre:regex-replace "\\." (format nil "\\text{~a}~[~:;\\times 10^\{~a\}~]" strn exponent exponent) ","))))
 
 
@@ -131,6 +132,9 @@
 (defmethod pq-format (pq  &key  &allow-other-keys)
   "format the physical quantity"
   "--")
+
+(defmethod pq-format ((pq real)  &rest keys &key  &allow-other-keys)
+  (apply  #'number-format%  pq keys))
 
 (defmethod pq-format ((pq cons)  &rest keys &key  &allow-other-keys )
   "format the physical quantity"
