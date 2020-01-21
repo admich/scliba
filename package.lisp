@@ -157,15 +157,6 @@
 (antik:make-user-package :scliba)
 
 
-
-(defpackage #:scliba-formatter
-  (:use #:cl #:scliba)
-  (:export 
-	       #:number-format
-	       #:number-scientific-notation
-	       #:pq-format)
-  (:nicknames #:scliba-f))
-
 (defpackage #:physics
   (:use #:cl #:scliba)
   (:shadowing-import-from #:scliba #:columns)
