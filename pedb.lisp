@@ -148,7 +148,7 @@ enddef;
 (defmethod export-document :around ((document pedb-document) (backend context-backend))
   (loop for ff in '("tex/didattica.tex" "tex/env_esercizi.tex" "tex/esercizi.lua") do
        (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
-    		       (make-pathname :name (pathname-name ff) :type (pathname-type ff) :directory *outdirectory*)))
+                       (make-pathname :name (pathname-name ff) :type (pathname-type ff) :directory (pathname-directory *outdirectory*))))
 
   (format *outstream* "
 % \\usepath[../..]
@@ -317,7 +317,7 @@ enddef;
 ;;;;;
 
 (defun tutti-esercizi ()
-  (remove-if-not (lambda (x) (let ((str (pathname-type x))) (or (string= "tex" str) (string= "lisp" str))))
+  (remove-if-not (lambda (x) (let ((str (pathname-type x))) (or (string= "tex" str) (string= "lisp" str) (string= "scl" str))))
 		 (uiop:directory-files *esercizi-directory*)))
 
 (defun get-esercizio-argomento (ese)
@@ -334,7 +334,6 @@ enddef;
 
 (defun raccolta-esercizi () 
   (let ((*randomize* nil))
-    
     (compito (:title "Eserciziario di fisica" :soluzioni t :rfoot (format nil "Compilato \\date\\ \\currenttime"))
       "
 \\enablemode[soluzioni]
@@ -351,9 +350,15 @@ enddef;
 			(format nil "~&\\rightaligned{\\color[middlegray]{~A}}~%" (pathname-name ese))))
 	     "
 \\doifmode{soluzioni}{\\subject{Soluzioni}
-\\selectblocks[soluzione][criterium=section]}")))
-    ))
+\\selectblocks[soluzione][criterium=section]}")))))
 
+(defun genera-all-exercize ()
+  (with-open-file (stream (merge-pathnames "all-exercise.tex" *eserciziari-directory*) :direction :output :if-exists :supersede :if-does-not-exist :create)
+    (let* ((*section-level* 1)
+           (*outdirectory* *eserciziari-directory*)
+           (backend (make-instance 'context-backend :stream stream))
+           (*outstream* stream))
+      (export-document (raccolta-esercizi) backend))))
 
 ;;; Compiling
 (defclass mixin-pedb-backend (mixin-multiple-random-output-backend)
@@ -480,12 +485,6 @@ enddef;
 ;; 				     esercizio)))
 ;;     (compila-context file :mode "soluzioni")))
 
-;; (defun pedb-all-exercize ()
-;;   (with-open-file (stream (merge-pathnames *eserciziari-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-;;     (let* ((*section-level* 1)
-;; 	   (backend (make-instance 'context-backend :stream stream))
-;; 	   (*outstream* (backend-outstream backend)))
-;;       (export-document (raccolta-esercizi) backend))))
 
 
 #|

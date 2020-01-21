@@ -372,8 +372,7 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 ;;; maybe a counter for *math* in case of nested math environment
 (defmethod export-document :around ((document mixin-math) backend)
   (let ((*math* t))
-    (call-next-method)
-    ))
+    (call-next-method)))
 
 (def-authoring-tree ref)
 

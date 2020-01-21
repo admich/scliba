@@ -54,9 +54,8 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
     (uiop:ensure-all-directories-exist (list outfile))
     (with-open-file (stream outfile :direction :output :if-exists :supersede :if-does-not-exist :create)
       (let ((*outstream* stream)
-	    (*outdirectory* (pathname-directory outfile)))
-	(call-next-method)
-	))
+            (*outdirectory* (pathname-directory outfile)))
+	(call-next-method)))
     outfile))
 
 (defmethod export-file ((file t) (backend t))

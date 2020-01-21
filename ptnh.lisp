@@ -100,10 +100,7 @@
 ;;;; Compiler
 
 (defun compila-guarda-formulario (document &key (directory (merge-pathnames "formulari/file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))
-  (compila-guarda (merge-pathnames document directory) backend)
-  ;; (view-pdf (compila-context
-  ;; 	     (export-file (merge-pathnames document directory) backend)))
-  )
+  (compila-guarda (merge-pathnames document directory) backend))
 
 (defun compila-guarda-ptnh (document &key (directory  (merge-pathnames "file.lisp" *ptnh-directory*)) (backend (make-instance 'ptnh-context-backend)))
    (compila-guarda (merge-pathnames document directory) backend))

@@ -1,8 +1,6 @@
 ;;;;; backend.lisp
 (in-package #:scliba)
 
-
-
 (defclass backend ()
   ((outstream :initarg :stream
 	      :initform *standard-output*
@@ -26,7 +24,6 @@
 	  collect (read-file file)))
      backend)))
 
-
 (defclass mixin-context-backend (backend) ())
 
 (defclass mixin-context-xtable-backend (backend) ())
@@ -36,7 +33,6 @@
 (defmethod initialize-instance :after ((obj mixin-context-backend) &rest rest)
   (setf (backend-view-fn obj) #'view-pdf
 	(backend-compile-fn obj) (compose #'compila-context #'export-file)))
-
 
 (defclass context-backend (mixin-context-backend mixin-context-xtable-backend) ())
 

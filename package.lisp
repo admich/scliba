@@ -195,7 +195,8 @@
    #:compila-esercizio-preview
    #:*esercizi-argomenti*
    #:input-esercizio
-   #:esercizi))
+   #:esercizi
+   #:genera-all-exercize))
 
 (antik:make-user-package :scliba-pedb)
 
