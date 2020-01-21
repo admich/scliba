@@ -104,19 +104,3 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 (defun compila (filelisp backend)
   (funcall (backend-compile-fn backend) filelisp backend))
 
-
-#|
-(compito (:title "Verifica di fisica" :scuola nil :rfoot "feb 2016 Q2C1 (w07)")
-  (infoform)
-  (columns (:n 2 :balance :no)
-    (input (:file "asada")) 
-    (esercizi  ("q-cin2-ch-00166" "q-cin2-ch-00087" "q-cin2-ch-00167" "q-din-ch-00168" "q-din-ch-00169" "q-din-ch-00132" "q-din-ch-00135" "q-din-ch-00122" "q-din-ch-00170")))
-  )
-
-(with-open-file (stream (merge-pathnames *compiti-directory* "compito.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-  (export-document (read-file "examples/compito.cla") :context stream))
-
-(with-open-file (stream (merge-pathnames *compiti-directory* "all-exercise.tex") :direction :output :if-exists :supersede :if-does-not-exist :create)
-  (let ((*section-level* 1)) (export-document (raccolta-esercizi) :context stream)))
-
-|#

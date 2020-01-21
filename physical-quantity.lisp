@@ -121,9 +121,7 @@
 	  :initform *s-o-u*)
    (new-unit :accessor pq-format-new-unit
        :initarg :new-unit
-       :initform nil)
-   ))
-
+       :initform nil)))
 
 (defgeneric pq-format (pq &key &allow-other-keys))
 

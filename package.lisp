@@ -88,7 +88,6 @@
 	       #:hlinefill
 	       #:title
 	       #:centering
-	       ;; #:big
 	       #:tfxx
 	       #:tfx
 	       #:tf

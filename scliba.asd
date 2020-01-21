@@ -12,14 +12,11 @@
 	       (:file "base")
 	       (:file "backend")
 	       (:file "backend-exporter")
-	       ;; (:file "format")
-	       ;; (:file "formatter")
 	       (:file "physical-quantity")
 	       (:file "physics")
 	       (:file "pedb")
 	       (:file "ptnh")
-	       (:file "itas")
-	       ))
+	       (:file "itas")))
 
 
 

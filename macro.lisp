@@ -1,6 +1,5 @@
 (in-package :scliba)
 
-
 (defmacro with-document-arguments (args document &body body)
   (let ((in (gensym)))
     `(let ((,in ,document))
@@ -17,8 +16,6 @@
                       args)
            ,@body))))
 
-
-
 ;;; macro utility
 (defmacro def-authoring-tree (name &optional (superclass '(authoring-tree)) &key (slot '()) (documentation "No documentation"))
   `(progn
@@ -34,23 +31,17 @@
 	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
 	      tree))))))
 
-
 (defmacro def-simple-authoring-tree (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
   `(progn
      (defclass ,name (,@superclass)
        ())
-     ;; (defun ,name (&rest body)
-     ;;   (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
-     ;; 	 (make-instance ',name :body body)))
      (defmacro ,name (&body body)
        (let ((cl '',name))
      	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
 		(tree (make-instance ,cl)))
 	    (let ((*current-node* tree))
 	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
-	      tree)
-     	    )))
-     ))
+	      tree))))))
 
 (defmacro def-simple-authoring-tree-fn (name &optional (superclass '(authoring-tree)) (documentation "No documentation"))
   `(progn
@@ -58,28 +49,4 @@
        ())
      (defun ,name (&rest body)
        (let ((*math* (if (typep (make-instance ',name) 'mixin-math) t nil)))
-     	 (make-instance ',name :body body)))
-     ;; (defmacro ,name (&body body)
-     ;;   (let ((cl '',name))
-     ;; 	 `(let ((*math* (if (typep (make-instance ,cl) 'mixin-math) t nil))
-     ;; 		(tree (make-instance ,cl)))
-     ;; 	    (let ((*current-node* tree))
-     ;; 	      (setf (authoring-tree-body tree) (flatten (list ,@body)))
-     ;; 	      tree)
-     ;; 	    )))
-     ))
-
-
-
-
-#|
-(let ((doc (itemize (:a 1 :b 2))))
-  (with-document-arguments ((a :a) (b :b)) doc
-    (format t "a: ~a b: ~a" a b)))
-
-(let ((doc (itemize (:a 2 :b 3))))
-  (with-document-arguments (a b) doc
-    (format t "a: ~a b: ~a" a b)))
-
-|#
-
+     	 (make-instance ',name :body body)))))

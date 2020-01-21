@@ -416,7 +416,6 @@ enddef;
     (format stream "~a" *skeleton-compito*))
   (format nil "~a" file))
 
-
 ;; (defun genera-esercizio-preview (esercizio)
 ;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
 ;;     (let* ((backend (make-instance 'context-backend :stream stream))
@@ -433,46 +432,6 @@ enddef;
 ;; (defun compila-esercizio-preview (document &key (backend *default-backend*))
 ;;   (compila document backend))
 
-;;; old to remove 
-
-;; (defvar *i-compito* 0)
-
-
-
-;; (defun compila-compito (compito &key n (directory *compiti-directory*) (backend-type 'context-backend))
-;;   "genera il sorgente context dal sorgente lisp con la key :n genera random n compiti"
-;;   (with-open-file (stream (merge-pathnames directory (make-pathname :name compito :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-;;     (let ((backend (make-instance backend-type :stream stream)))
-;;       (let ((*outstream* (backend-outstream backend)))
-;; 	(if n
-;; 	    (let ((*randomize* t))
-;; 	      (format stream "\\starttext~%")
-;; 	      (dotimes (*i-compito* n)
-;; 		(export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))
-;; 	      (format stream "\\stoptext~%")
-;; 	      )
-;; 	    (export-document (read-file (merge-pathnames directory (make-pathname :name compito :type "lisp"))) backend))))))
-
-;; (defun compila-context-compito (file &key (directory *compiti-directory*))
-;;   (let ((file (uiop:merge-pathnames* directory file)))
-;;     (compila-context file)))
-
-;; (defun compila-context-esercizio (file)
-;;   (let ((file (uiop:merge-pathnames* *esercizi-directory* file)))
-;;     (compila-context file)))
-
-;; (defun compila-guarda-compito (file &key n (directory *compiti-directory*) (soluzioni nil) (backend-type 'context-backend))
-;;   (compila-compito file :n n :directory directory  :backend-type backend-type)
-;;   (let ((file (uiop:merge-pathnames* directory file))
-;; 	(file-pdf (uiop:merge-pathnames* directory (uiop:make-pathname* :name file :type "pdf"))))
-;;     (if soluzioni
-;; 	(compila-context file :mode "soluzioni")
-;; 	(compila-context file))
-;;     (view-pdf file-pdf)))
-
-;; (defun compila-guarda-compito-soluzioni (file &key n (directory *compiti-directory*))
-;;   (compila-guarda-compito file :n n :directory directory :soluzioni t))
-
 ;; (defun genera-esercizio-preview (esercizio)
 ;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
 ;;     (let* ((backend (make-instance 'context-backend :stream stream))
@@ -485,9 +444,3 @@ enddef;
 ;; 				     esercizio)))
 ;;     (compila-context file :mode "soluzioni")))
 
-
-
-#|
-
-
-|#

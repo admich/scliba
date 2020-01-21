@@ -382,7 +382,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 
 (def-authoring-tree mpcode)
 
-
 ;;;; space
 (def-authoring-tree vspace)
 
@@ -400,13 +399,6 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
       collect (table-row ()
 		(loop for cell in row collect
 		     (table-cell () cell)))))
-
-;; (defmacro simple-table-by-rows (args list)
-;;   (table () 
-;;     `(loop for row in ,list
-;; 	collect (table-row ()
-;; 		  (loop for cell in row collect
-;; 		       (table-cell () cell))))))
 
 ;;;; MATH
 (def-simple-authoring-tree imath (authoring-tree mixin-math))

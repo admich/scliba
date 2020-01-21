@@ -1,12 +1,10 @@
 ;;;; Un pacchetto per documenti dell'ITAS Anzilotti
 
-
 (defpackage #:scliba-itas
   (:use #:cl #:scliba)
   (:nicknames #:itas))
 
 (in-package #:scliba-itas)
-
 
 (defclass tabella-itas () ())
 

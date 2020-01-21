@@ -7,7 +7,6 @@
 		:components ((:module "gui"
 				      :serial t
 				      :components ((:file "package")
-						   (:file "scliba-gui")
-                                                   (:file "climacs-scliba-syntax")
-						   ))))
+                                   (:file "scliba-gui")
+                                   (:file "climacs-scliba-syntax")))))
 
