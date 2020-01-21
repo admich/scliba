@@ -80,7 +80,6 @@
 	       #:table-row
 	       #:table-cell
 	       #:imath
-	       #:phys-n
 	       #:formula
 	       #:compila-context
 	       #:pq-format
@@ -161,7 +160,7 @@
 
 (defpackage #:scliba-formatter
   (:use #:cl #:scliba)
-  (:export n
+  (:export 
 	       #:number-format
 	       #:number-scientific-notation
 	       #:pq-format)

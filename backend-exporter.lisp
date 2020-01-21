@@ -344,9 +344,6 @@
 (defmethod export-document :after ((document imath) (backend mixin-context-backend))
   (format *outstream*"$"))
 
-(defmethod export-document  ((document phys-n) (backend context-backend))
-  (scliba-f:n outstream (first (authoring-tree-body document)) nil nil))
-
 (defmethod export-document :before ((document formula) (backend context-backend))
   (format *outstream*"~@[~&\\placeformula[~a]~%~]" (getf (authoring-tree-arguments document) :ref)))
 

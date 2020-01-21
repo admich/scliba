@@ -412,6 +412,4 @@ big 	1.2 	6 	7 	8 	9 	10 	11 	12 	12 	14.4 	17.3 	20.7 	20.7
 ;;;; MATH
 (def-simple-authoring-tree imath (authoring-tree mixin-math))
 
-(def-authoring-tree phys-n)
-
 (def-authoring-tree formula (authoring-tree mixin-math mixin-div-html mixin-startstop-context))
