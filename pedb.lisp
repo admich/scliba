@@ -70,6 +70,7 @@
     endfor;
 
   enddef;
+
   def righello(expr strt, stp, btick, stick, meas)=
     draw (-5+strt*u,0)--(-5+strt*u,-1cm)--(stp*u+5,-1cm)--(stp*u+5,0)--cycle;
     for i= strt step btick until stp:
@@ -81,6 +82,20 @@
     endfor;
     label(btex mm etex,((strt+stp)*u/2,-0.8cm));
     draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
+enddef;
+
+def termometro(expr strt, stp, btick, stick, meas, um)=
+  u:=um*mm;
+  draw (0,-5+strt*u)--(-1cm,-5+strt*u)--(-1cm,stp*u+5)--(0,stp*u+5)--cycle;
+  for i= strt step btick until stp:
+    draw (0,i*u)--(-0.3cm,i*u);
+    label.lft(decimal i,(-0.3cm,i*u));
+  endfor
+  for i=strt step stick until stp:
+    draw (0,i*u)--(-0.2cm,i*u);
+  endfor
+  label(btex ℃ etex,(-0.8cm,(strt+stp)*u/2));
+  draw (-1mm,-5+strt*u)--(-1mm,meas*u) withpen pensquare xscaled 2pt;
 enddef;
 
 def millimetrata (expr x, y)=
