@@ -148,7 +148,7 @@ enddef;
 (defmethod export-document :around ((document pedb-document) (backend context-backend))
   (loop for ff in '("tex/didattica.tex" "tex/env_esercizi.tex" "tex/esercizi.lua") do
        (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
-                       (make-pathname :name (pathname-name ff) :type (pathname-type ff) :directory (pathname-directory *outdirectory*))))
+                       (merge-pathnames (make-pathname :name (pathname-name ff) :type (pathname-type ff)) *output-file*)))
 
   (format *outstream* "
 % \\usepath[../..]
@@ -355,7 +355,7 @@ enddef;
 (defun genera-all-exercize ()
   (with-open-file (stream (merge-pathnames "all-exercise.tex" *eserciziari-directory*) :direction :output :if-exists :supersede :if-does-not-exist :create)
     (let* ((*section-level* 1)
-           (*outdirectory* *eserciziari-directory*)
+           (*output-file* *eserciziari-directory*)
            (backend (make-instance 'context-backend :stream stream))
            (*outstream* stream))
       (export-document (raccolta-esercizi) backend))))

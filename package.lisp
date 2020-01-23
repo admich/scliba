@@ -100,7 +100,7 @@
 	       #:def-counter
 	       #:def-enumerated
 	       #:*outstream*
-	       #:*outdirectory*
+	       #:*output-file*
 	       #:*buffers*
 	       #:buffered
 	       #:def-buffer
