@@ -413,10 +413,19 @@ enddef;
 ;;;; Utils
 (defun controlla-esercizi-uguali (eserciziario compito &key (eserciziario-directory *eserciziari-directory*)
                                                          (compito-directory *compiti-directory*))
-  "Cerca se gli esercizi del compito COMPITO sono già nell'eserciziario."
-  (let ((compito1 (merge-pathnames eserciziario eserciziario-directory))
-        (compito2 (merge-pathnames compito compito-directory)))
-    (read-file compito1)))
+  "Cerca se gli esercizi del compito COMPITO sono già nell'eserciziario ESERCIZIARIO."
+  (labels ((find-esercizi (x)
+             (typecase x
+               (esercizio
+                   (list (authoring-tree-source-file x)))
+               (authoring-tree (find-esercizi (authoring-tree-body x)))
+               (list (loop for y in x append (find-esercizi y)))
+               (otherwise nil))))
+    (let* ((compito1 (merge-pathnames eserciziario eserciziario-directory))
+           (compito2 (merge-pathnames compito compito-directory))
+           (es1 (find-esercizi (read-file compito1)))
+           (es2 (find-esercizi (read-file compito2))))
+      (intersection es1 es2))))
 
 ;;;; Skeletons
 (defun new-compito (file)

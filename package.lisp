@@ -28,6 +28,7 @@
 	       #:authoring-tree-arguments
 	       #:authoring-tree-body
 	       #:authoring-tree-parent
+	       #:authoring-tree-source-file
 	       #:get-argument
 	       #:export-document
 	       #:export-document-on-string
