@@ -307,8 +307,7 @@ enddef;
 	    (or (probe-file ,file)
 		(probe-file (merge-pathnames *esercizi-directory* (make-pathname :name ,file :type "lisp")))
 		(merge-pathnames *esercizi-directory* (make-pathname :name ,file :type "tex")))))
-       (input ,new-path)
-       )))
+       (input ,new-path))))
 
 (defmacro esercizi (&rest exes)
   `(loop for x in (list ,@exes)
@@ -409,6 +408,15 @@ enddef;
 
 (defun compila-esercizio-preview (document &key (backend *default-backend*))
   (compila document backend))
+
+
+;;;; Utils
+(defun controlla-esercizi-uguali (eserciziario compito &key (eserciziario-directory *eserciziari-directory*)
+                                                         (compito-directory *compiti-directory*))
+  "Cerca se gli esercizi del compito COMPITO sono già nell'eserciziario."
+  (let ((compito1 (merge-pathnames eserciziario eserciziario-directory))
+        (compito2 (merge-pathnames compito compito-directory)))
+    (read-file compito1)))
 
 ;;;; Skeletons
 (defun new-compito (file)

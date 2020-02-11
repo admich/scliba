@@ -23,17 +23,17 @@
   "Read the file and generate the clos structure of the document.
 ATTENTION: don't read untrusted file. You read the file with common lisp reader."
   (named-readtables:in-readtable :scribble-antik) ;scribble-both
-  (with-open-file (ifile file)
-
-    (let ( ;; (*default-pathname-defaults* (uiop:truename* file))
-	  (old-package *package*))
-      (loop for form = (read ifile nil :eof)
-	 with value = '()
-	 until (eq form :eof)
-	 do (push (eval form) value)
-	 finally
-	   (setf *package* old-package)
-	   (return (reverse value))))))
+  (let ((*source-file* file))
+    (with-open-file (ifile file)
+      (let ( ;; (*default-pathname-defaults* (uiop:truename* file))
+            (old-package *package*))
+        (loop for form = (read ifile nil :eof)
+           with value = '()
+           until (eq form :eof)
+           do (push (eval form) value)
+           finally
+             (setf *package* old-package)
+             (return (reverse value)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;

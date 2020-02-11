@@ -1,5 +1,7 @@
 (in-package :scliba)
 
+(defparameter *source-file* nil)
+
 (defclass authoring-tree ()
   ((arguments :initarg :arguments
 	      :initform nil
@@ -9,9 +11,13 @@
 	 :accessor authoring-tree-body)
    (parent :initarg :parent
 	   :initform *current-node*
-	   :reader authoring-tree-parent))
+	   :reader authoring-tree-parent)
+   (source-file :accessor authoring-tree-source-file
+                :initform nil))
   (:documentation "Main class for scliba documents"))
 
+(defmethod initialize-instance :after ((obj authoring-tree) &key)
+  (setf (authoring-tree-source-file obj) *source-file*))
 
 (defun get-argument (auth-tree arg)
   "get an argument from an authoring-tree"
