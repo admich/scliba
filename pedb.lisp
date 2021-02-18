@@ -80,7 +80,7 @@
     for i=strt step stick until stp:
       draw (i*u,0)--(i*u,-0.2cm);
     endfor;
-    label(btex mm etex,((strt+stp)*u/2,-0.8cm));
+    label(\"mm\",((strt+stp)*u/2,-0.8cm));
     draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
 enddef;
 
