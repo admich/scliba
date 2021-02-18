@@ -1,25 +1,25 @@
 (require 'cl)
-(load "skeletons-cl-authoring" t)
+(load "skeletons-cl-authoring" nil)
 
 (defun scliba-compila-guarda-file ()
   (interactive)
   (let* ((file-name (buffer-file-name))
          (comand (concat "(scliba:compila-guarda \"" file-name "\")")))
-    (slime-eval `(swank:eval-and-grab-output ,comand))
+    (sly-eval `(slynk:eval-and-grab-output ,comand))
     (message "Compilato file %s" file-name)))
 
 (defun pedb-store-dir ()
-  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-directory*)"))) 1 -1))
+  (substring (second (sly-eval '(slynk:eval-and-grab-output "(directory-namestring pedb::*esercizi-directory*)"))) 1 -1))
 
 (defun pedb-preview-dir ()
-  (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-preview-directory*)"))) 1 -1))
+  (substring (second (sly-eval '(slynk:eval-and-grab-output "(directory-namestring pedb::*esercizi-preview-directory*)"))) 1 -1))
 
 (defvar *pedb-raccolta-buffer* nil "nome file e buffer del compito associato")
 
 (defun pedb-esercizi-argomenti ()
-  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-argomenti*"))))))
+  (car (read-from-string (second (sly-eval '(slynk:eval-and-grab-output "pedb::*esercizi-argomenti*"))))))
 (defun pedb-esercizi-tipi ()
-  (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-tipi*"))))))
+  (car (read-from-string (second (sly-eval '(slynk:eval-and-grab-output "pedb::*esercizi-tipi*"))))))
 
 (defun pedb-max-num ()
   "return the maximum number of exercize"
@@ -43,7 +43,7 @@
   (interactive)
   (let* ((fname (read-from-minibuffer "File Name (es: 15-al-i-q1c1.lisp): "))
 	 (file-to-open
-	  (second (slime-eval `(swank:eval-and-grab-output
+	  (second (sly-eval `(slynk:eval-and-grab-output
 				,(concat "(pedb::new-compito (merge-pathnames \"" fname "\" pedb::*compiti-directory*))"))))))
     (find-file (read file-to-open))
     (lisp-mode)))
@@ -57,8 +57,8 @@
 
 (defun pedb-all-exercises ()
   "Return all the exercises"
-  (first  (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))")))))
-  ;; (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))"))))))
+  (first  (read-from-string (second (sly-eval '(slynk:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))")))))
+  ;; (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (sly-eval '(slynk:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))"))))))
   )
 
 
@@ -147,14 +147,14 @@ Letters do not insert themselves; instead, they are commands."
   (let ((comand
 	 (concat "(pedb:compila-esercizio-preview \"" (tabulated-list-get-id) "\")")))
 
-    (slime-eval `(swank:eval-and-grab-output ,comand))
+    (sly-eval `(slynk:eval-and-grab-output ,comand))
     (message "Compilato esercizio %s" (tabulated-list-get-id))))
 
 
 (defun pedb-view-exercise ()
   (interactive)
   (let ((command (concat "(funcall (scliba::backend-view-fn scliba:*default-backend*) (scliba:standard-output-file \"" (tabulated-list-get-id) "\" scliba:*default-backend*))")))
-    (slime-eval `(swank:eval-and-grab-output ,command))))
+    (sly-eval `(slynk:eval-and-grab-output ,command))))
   ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
   ;;   (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
   ;;   (if (file-exists-p pdf)
@@ -195,5 +195,5 @@ Letters do not insert themselves; instead, they are commands."
 
 
 ;;; prove
-;(slime-eval-async `(swank:eval-and-grab-output "(+ 1 2)"))
+;(sly-eval-async `(slynk:eval-and-grab-output "(+ 1 2)"))
 
