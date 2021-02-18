@@ -4,6 +4,7 @@
 (define-units 'time '((hour (* 3600 second) (hr hours) "h")))
 (define-units 'time '((minute (* 60 second) (min minutes) "min")))
 (define-units 'length '((decimeter     0.1       (dm decimeters) "dm")))
+(define-units 'mass '((hectogram (* 0.1 kilogram) (hg hectogram) "hg")))
 
 (define-units 'pressure
     '((pascal     (/ newton (* meter meter)) (pa) "Pa") ))
