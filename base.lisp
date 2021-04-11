@@ -91,6 +91,10 @@
   "If *randomize* is true choose at random from sequence otherwise return the first element in the list"
   (if *randomize* (alexandria:random-elt seq) (alexandria:first-elt seq)))
 
+(defun mischia (seq)
+  "If *randomize* is true shuffle the sequence"
+  (if *randomize* (alexandria:shuffle seq) seq))
+
 (defclass random-body (authoring-tree)
   ())
 
