@@ -16,8 +16,8 @@
 	           (:file "physics")
 	           (:file "pedb")
 	           (:file "ptnh")
-               (:file "itas-odt")
-	           (:file "itas")))
+               (:file "itas")
+	           (:file "itas-odt")))
 
 
 
