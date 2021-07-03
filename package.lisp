@@ -206,3 +206,9 @@
   (:nicknames #:ptnh))
 
 (antik:make-user-package :scliba-ptnh)
+
+
+(defpackage #:scliba-itas
+  (:use #:cl #:scliba)
+  (:nicknames #:itas)
+  (:local-nicknames (#:a #:alexandria)))

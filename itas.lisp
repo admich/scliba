@@ -1,10 +1,61 @@
 ;;;; Un pacchetto per documenti dell'ITAS Anzilotti
 
-(defpackage #:scliba-itas
-  (:use #:cl #:scliba)
-  (:nicknames #:itas))
-
 (in-package #:scliba-itas)
+
+(defun view-odt (file)
+  (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
+    (let* ((file-new (format nil "~a" (merge-pathnames (make-pathname :type "odt") (pathname-name file))))
+	       (command "libreoffice"))
+      (uiop:run-program (list command file-new) :output t))))
+
+(defclass prog-odt-backend (backend)
+  ()
+  (:default-initargs :view-fn #'view-odt))
+
+(defmethod standard-output-file (file (backend prog-odt-backend))
+  (merge-pathnames (merge-pathnames (pathname-name file) "odt/prova.odt") file))
+
+(defmethod export-file :around ((file t) (backend prog-odt-backend))
+  (labels ((tmp-odt-dir (path)
+             (let ((name (format nil "~a" (a:make-gensym (pathname-name path)))))
+               (merge-pathnames (concatenate 'string "scliba-odt/" name "/") (uiop:temporary-directory)))))
+    (let* ((*top-level-document* t)
+	       (outfile (standard-output-file file backend))
+           (dir (tmp-odt-dir file))
+           (manifest-file (merge-pathnames "META-INF/manifest.xml" dir))
+           (content-file (merge-pathnames "content.xml" dir))
+           (meta-file (merge-pathnames "meta.xml" dir))
+           (styles-file (merge-pathnames "styles.xml" dir))
+           (mimetype-file (merge-pathnames "mimetype" dir))
+           (mimetype "application/vnd.oasis.opendocument.text"))
+      (uiop:ensure-all-directories-exist (list outfile manifest-file))
+       ;; mimetype
+       (with-open-file (*standard-output* mimetype-file :direction :output :if-exists :supersede)
+         (format t mimetype))
+       ;; manifestfile
+       (write-manifest-file manifest-file mimetype)
+       ;; meta xml file
+       (write-meta-file meta-file "Andrea De Michele")
+       ;; manifest.rdf TODO
+       ;; thumbnails TODO
+       ;; style file
+       (write-style-file styles-file)
+
+      ;; Rivedere usando (call-next-method)
+      (with-open-file (stream content-file :direction :output :if-exists :supersede :if-does-not-exist :create)
+        (let ((*outstream* stream)
+              (*output-file* outfile))
+          (export-document (read-file file) backend)))
+
+      (zip:with-output-to-zipfile (zip outfile :if-exists :supersede)
+         (zip:write-zipentry zip "mimetype" mimetype-file :deflate nil)
+         (zip:write-zipentry zip "content.xml" content-file)
+         (zip:write-zipentry zip "meta.xml" meta-file)
+         (zip:write-zipentry zip "styles.xml" styles-file)
+         (zip:write-zipentry zip "META-INF/manifest.xml" manifest-file))
+       ;; pulisci directory temporanea
+      outfile)))
+
 
 (defclass tabella-itas () ())
 
