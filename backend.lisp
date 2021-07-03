@@ -36,9 +36,20 @@
 
 (defclass context-backend (mixin-context-backend mixin-context-xtable-backend) ())
 
+(defmethod standard-output-file (file (backend context-backend))
+  (merge-pathnames (merge-pathnames (pathname-name file) "context/prova.tex") file))
+
 (defclass autarchy-backend (backend) ())
 (defclass aut-context-backend (autarchy-backend mixin-context-backend mixin-context-xtable-backend) ())
+
+(defmethod standard-output-file (file (backend aut-context-backend))
+  (merge-pathnames (merge-pathnames (pathname-name file) "aut-context/prova.tex") file))
+
+
 (defclass html-backend (autarchy-backend) ())
+
+(defmethod standard-output-file (file (backend html-backend))
+  (merge-pathnames (merge-pathnames (pathname-name file) "html/prova.html") file))
 
 (defmethod initialize-instance :after ((obj html-backend) &rest rest)
   (setf (backend-view-fn obj) #'view-html))

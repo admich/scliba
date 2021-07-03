@@ -39,12 +39,9 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
 ;;;;;;;;;;;;;;;;;;;;
 ;;; compile utility os interaction
 ;;;;;;;;;;;;;;;;;
-(defun standard-output-file (file backend)
-  (if (symbolp backend) (setf backend (make-instance backend)))
-  (typecase backend
-    (context-backend (merge-pathnames (merge-pathnames (pathname-name file) "context/prova.tex") file))
-    (aut-context-backend (merge-pathnames (merge-pathnames (pathname-name file) "aut-context/prova.tex") file))
-    (html-backend (merge-pathnames (merge-pathnames (pathname-name file) "html/prova.html") file) )))
+(defgeneric standard-output-file (file backend)
+  (:documentation "Return the output file for the backend")
+  (:method (file (backend symbol)) (standard-output-file file (make-instance backend))))
 
 (defgeneric export-file (file backend))
 
