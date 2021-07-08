@@ -51,8 +51,8 @@
 
 (defmacro with-style-named-element ((element name) &body body)
   `(cxml:with-element* ("style" ,element)
-    (cxml:attribute* "style" "name" ,name)
-    ,@body))
+     (cxml:attribute* "style" "name" ,name)
+     ,@body))
 
 (defmacro odt-table ((&key (columns 1) (style "Tbl")) &body body)
   (a:once-only (columns)
@@ -382,33 +382,38 @@
            (styles-file (merge-pathnames "styles.xml" dir))
            (mimetype-file (merge-pathnames "mimetype" dir))
            (mimetype "application/vnd.oasis.opendocument.text"))
-      (uiop:ensure-all-directories-exist (list outfile manifest-file))
-      ;; mimetype
-      (with-open-file (*standard-output* mimetype-file :direction :output :if-exists :supersede)
-        (format t mimetype))
-      ;; manifestfile
-      (write-manifest-file manifest-file mimetype)
-      ;; meta xml file
-      (write-meta-file meta-file "Andrea De Michele")
-      ;; manifest.rdf TODO
-      ;; thumbnails TODO
-      ;; style file
-      (write-style-file styles-file)
+      (unwind-protect
+           (progn
+             (uiop:ensure-all-directories-exist (list outfile manifest-file))
+             ;; mimetype
+             (with-open-file (*standard-output* mimetype-file :direction :output :if-exists :supersede)
+               (format t mimetype))
+             ;; manifestfile
+             (write-manifest-file manifest-file mimetype)
+             ;; meta xml file
+             (write-meta-file meta-file "Andrea De Michele")
+             ;; manifest.rdf TODO
+             ;; thumbnails TODO
+             ;; style file
+             (write-style-file styles-file)
+             ;; Rivedere usando (call-next-method)
+             (with-open-file (stream content-file :direction :output :if-exists :supersede :if-does-not-exist :create)
+               (let ((*outstream* stream)
+                     (*output-file* outfile))
+                 (cxml:with-xml-output (cxml:make-character-stream-sink *outstream* :indentation *xml-indentation*)
+                   (export-document (read-file file) backend))))
 
-      ;; Rivedere usando (call-next-method)
-      (with-open-file (stream content-file :direction :output :if-exists :supersede :if-does-not-exist :create)
-        (let ((*outstream* stream)
-              (*output-file* outfile))
-          (cxml:with-xml-output (cxml:make-character-stream-sink *outstream* :indentation *xml-indentation*)
-            (export-document (read-file file) backend))))
-
-      (zip:with-output-to-zipfile (zip outfile :if-exists :supersede)
-        (zip:write-zipentry zip "mimetype" mimetype-file :deflate nil)
-        (zip:write-zipentry zip "content.xml" content-file)
-        (zip:write-zipentry zip "meta.xml" meta-file)
-        (zip:write-zipentry zip "styles.xml" styles-file)
-        (zip:write-zipentry zip "META-INF/manifest.xml" manifest-file))
-      ;; pulisci directory temporanea
+             (zip:with-output-to-zipfile (zip outfile :if-exists :supersede)
+               (zip:write-zipentry zip "mimetype" mimetype-file :deflate nil)
+               (zip:write-zipentry zip "content.xml" content-file)
+               (zip:write-zipentry zip "meta.xml" meta-file)
+               (zip:write-zipentry zip "styles.xml" styles-file)
+               (zip:write-zipentry zip "META-INF/manifest.xml" manifest-file)))
+        ;; pulisci directory temporanea
+        (dolist (x (list manifest-file content-file meta-file styles-file mimetype-file))
+          (delete-file x))
+        (uiop:delete-empty-directory (merge-pathnames "META-INF/" dir))
+        (uiop:delete-empty-directory dir))
       outfile)))
 
 ;;;; export-document
