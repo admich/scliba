@@ -84,7 +84,6 @@
 	       #:formula
 	       #:compila-context
 	       #:pq-format
-	       #:number-format
 	       #:pq-change-unit
 	       #:hlinefill
 	       #:title

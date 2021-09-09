@@ -56,9 +56,6 @@
 
 ;; print number
 
-(defun number-exponent (num)
-  (floor (log (abs num) 10)))
-
 (defun number-parts (num &key (precision 3))
   (let* ((fmt (format nil "~~,~d,1,1,,,'ee" (1- precision)))
 	 (parts (map 'list #'read-from-string (remove "" (ppcre:split "e|\\+" (format nil fmt num)) :test #'string=))))
@@ -69,9 +66,10 @@
   (if (zerop num)
       "0"
       (multiple-value-bind (n exp) (number-parts num :precision precision)
-        (let* ((exponent (or exponent (number-exponent num)))
+        (let* ((exponent (or exponent exp))
                (k (- exp exponent))
-               (d (- precision k 1))
+               (d% (- precision k 1))
+               (d (if (> d% 0) d% 0))
                (fmt (format nil "~~,~d,~df" d k))
                (strn% (format nil fmt n))
                (strn (if (or (char= #\0 (elt (remove-if (lambda (x) (char= x #\-)) strn%) 0))
@@ -145,8 +143,7 @@
   (with-slots (pq precision exponent s-o-u new-unit) document
     (with-nf-options (:system-of-units (funcall #'antik::make-sysunits (cdr s-o-u) (car s-o-u)))
       (multiple-value-bind (num unit) (pqval pq)
-	(let* ((exponent (or exponent (number-exponent num)))
-	       (unit (or (print-unit new-unit) (print-unit unit)))
+	(let* ((unit (or (print-unit new-unit) (print-unit unit)))
 	       (str (format nil "~a~:[\\ ~;~]~@[{\\rm ~a}~]"
 			    (number-format% num :precision precision :exponent exponent)
 			    (or (not unit) (string= unit (print-unit :degree)))
