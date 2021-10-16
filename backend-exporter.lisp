@@ -13,8 +13,9 @@
 
 (defmethod export-document :before ((document authoring-document) (backend mixin-context-backend))
   (format *outstream* "~%
-~@[\\setupbodyfont[~dpt]~]
-~@[\\setupinterlinespace[~a]~]~%" (get-argument document :bodyfont) (get-argument document :interline)))
+~&~@[\\setupbodyfont[~a]~]
+~&~@[\\setupbodyfont[~dpt]~]
+~@[\\setupinterlinespace[~a]~]~%" (get-argument document :fontfamily) (get-argument document :bodyfont) (get-argument document :interline)))
 
 (defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
   (if *top-level-document*
