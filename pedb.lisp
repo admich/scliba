@@ -141,7 +141,7 @@ enddef;
 
 \\stopMPinclusions")
 
-(def-authoring-tree pedb-document (authoring-document) :documentation "A pebb root document")
+(def-authoring-tree pedb-document (authoring-document) :documentation "A pedb root document")
 (def-authoring-tree compito (pedb-document) :documentation "Compito root document")
 
 
