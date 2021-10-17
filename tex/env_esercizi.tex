@@ -16,8 +16,6 @@
 
 \setupbodyfont[10pt]
 
-\setupunit[method=5]
-
 %\setupthinrules[before={}]
 \def\compito[#1]
  {\getrawparameters[Compito]
@@ -37,7 +35,6 @@
 \setuppagenumber[number=1]
 \resetesercizio
 \resetsoluzione
-
 }
 
 \setuphead[title][style={\ss\bfd},alternative=middle]
@@ -54,13 +51,6 @@
 \setuphead[subsection][style={\ss\bfa}]
 
 \setupquotation[style=italic]
-
-\def\infoform{%
-\starttabulate[|lw(.5\textwidth)|lw(.5\textwidth)|]%
-  \NC Nome: \fillinrules \NC Classe: \fillinrules \NC \NR%
-  \NC Cognome: \fillinrules \NC  Data: \fillinrules \NC \NR%
-\stoptabulate%
-}
 
 %%%%%%%%%%%%%%%%%%%%
 %% esercizio soluzione
@@ -85,101 +75,5 @@
                         after={\stopitemize}]
 
 \definestartstop[choices][before={\blank[small]\startitemize[A,packed,joinedup]},after={\stopitemize}]
-
-
-%%%%%%%%%%%%%%%%%%%%
-%% RSFS font 
- % \font\tenscr   = rsfs10 at 10pt %bodyfontsize at 12
- % \font\sevenscr = rsfs7  at 7pt  %scriptfontsize at 9
- % \font\fivescr  = rsfs5  at 5pt  %scriptscriptfontsize
-
- % \skewchar\tenscr   = '127   %'177
- % \skewchar\sevenscr = '127
- % \skewchar\fivescr  = '127
-
- % \newfam\scrfam
-
- % \textfont\scrfam         = \tenscr
- % \scriptfont\scrfam       = \sevenscr
- % \scriptscriptfont\scrfam = \fivescr
-
- % \def\scr{\fam\scrfam}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% METAPOST
-% \startMPinclusions
-%   input metaobj;
-
-%   vardef markanglebetween (expr endofa, endofb, common, length, str) =
-%         save curve, where ; path curve ; numeric where ;
-%         where := turningnumber (common--endofa--endofb--cycle) ;
-%         curve := (unitvector(endofa-common){(endofa-common) rotated (where*90)}
-%         .. unitvector(endofb-common)) scaled length shifted common ;
-%         draw thefreelabel(str,point .5 of curve,common) withcolor black ;
-%        curve
-%   enddef ;
-
-%   u=5mm;
-%   def grid(expr xi,xf,yi,yf)=
-%     for i=xi+1 upto xf-1:
-      
-%       draw (i*u,yi*u)..(i*u,yf*u) withcolor .7white ;
-%     endfor
-%     for i=yi+1 upto yf-1:
-%       draw (xi*u,i*u)..(xf*u,i*u) withcolor .7white;
-%     endfor
-%   enddef;
-  
-%   def assi(expr xi,xf,yi,yf)=
-%     drawarrow (xi*u,0)--(xf*u,0);
-%     drawarrow (0,yi*u)--(0,yf*u);
-%     label.bot(btex $x$ etex, (xf*u,0));
-%     label.lft(btex $y$ etex, (0,yf*u));
-%   enddef;
-  
-%   def labelgriglia(expr xi,xf,yi,yf)=
-%     for i=xi+1 upto xf-1:
-%       draw (i*u,-2pt)--(i*u,2pt);
-%       draw textext(decimal(i)) scaled .8 shifted (i*u-3pt,-5pt);    
-%  %     label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (i*u,0));
-%     endfor
-%     for i=yi+1 upto yf-1:
-%       draw (-2pt,i*u)--(2pt,i*u);
-%       draw textext(decimal(i)) scaled .8 shifted (-6pt,i*u+4pt);      
-% %      label.llft(decimal(i) infont "ptmr" scaled (6pt/fontsize defaultfont), (0,i*u));
-%     endfor;
-
-%   enddef;
-%   def righello(expr strt, stp, btick, stick, meas)=
-%     draw (-5+strt*u,0)--(-5+strt*u,-1cm)--(stp*u+5,-1cm)--(stp*u+5,0)--cycle;
-%     for i= strt step btick until stp:
-%       draw (i*u,0)--(i*u,-0.3cm);
-%       label.bot(decimal i,(i*u,-0.3cm));
-%     endfor
-%     for i=strt step stick until stp:
-%       draw (i*u,0)--(i*u,-0.2cm);
-%     endfor;
-%     label(btex mm etex,((strt+stp)*u/2,-0.8cm));
-%     draw (strt*u,3)--(meas*u,3) withpen pensquare yscaled 3pt;
-% enddef;
-
-% \stopMPinclusions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% esercizi
-
-\startluacode
-require("./esercizi")
-\stopluacode
-
-\def\var[#1][#2][#3]{\ctxlua{u.#1 = {value=[==[#2]==],svalue='#2',unit=#3}}}
-\def\dervar[#1][#2][#3]{\ctxlua{u.#1 = u.defdervar(#2,#3)}}
-\def\dervarp[#1]#2{\ctxlua{u.printvar(u.#2,#1)}}
-
-
-
-
-\def\varp#1{\ctxlua{context.unit(u.#1.svalue .. u.#1.unit)}}
-\var[g][9.8]["meter per square second"]
-\var[bigG][6.67e-11]["newton square meter per square kilogram"]
 
 \stopenvironment
