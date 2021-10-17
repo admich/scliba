@@ -138,7 +138,6 @@ def puntoconerrore (expr x, y, dx, dy)=
     drawdot (x*u,y*u) withpen pencircle scaled 3 ;
 enddef;
 
-
 \\stopMPinclusions")
 
 (def-authoring-tree pedb-document (authoring-document) :documentation "A pedb root document")
@@ -205,14 +204,10 @@ enddef;
        (table-cell () "Cognome: " (hlinefill ()))
        (table-cell () "Data: " (hlinefill ())))))
 
-(def-enumerated esercizio (pedb-document)) ;"\\inleft{~d}"
+(def-enumerated esercizio ())
 
 (defmethod export-document ((document esercizio) (backend aut-context-backend))
-  ;; (format *outstream* "~&\\inleft{~d}~%" (enumerated-n document))
-  (format *outstream* "~&{\\bf ~d.} " (enumerated-n document))
-  ;; (call-next-method)
-  ;; (format *outstream*"~&~%")
-  )
+  (format *outstream* "~&{\\bf ~d.} " (enumerated-n document)))
 
 (defmethod export-document :after ((document esercizio) (backend aut-context-backend))
   (format *outstream* "~&\\blank~%~%"))
