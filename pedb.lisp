@@ -146,7 +146,7 @@ enddef;
 
 
 (defmethod export-document :around ((document pedb-document) (backend context-backend))
-  (loop for ff in '("tex/env_esercizi.tex" "tex/esercizi.lua") do
+  (loop for ff in '("tex/env_esercizi.tex") do
        (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
                        (merge-pathnames (make-pathname :name (pathname-name ff) :type (pathname-type ff)) *output-file*)))
 
