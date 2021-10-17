@@ -20,11 +20,11 @@
 (defmethod export-document :around ((document authoring-document) (backend mixin-context-backend))
   (if *top-level-document*
       (progn 
-	(format *outstream*
-		"\\starttext~%\\setupcolors[state=start]~%")
-	(call-next-method)
-	(format *outstream*
-		"~&\\stoptext~%"))
+	    (format *outstream*
+		        "\\starttext~%\\setupcolors[state=start]~%")
+	    (call-next-method)
+	    (format *outstream*
+		        "~&\\stoptext~%"))
       (call-next-method)))
 
 (defmethod export-document :around ((document authoring-document) (backend html-backend))
