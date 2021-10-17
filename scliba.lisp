@@ -88,7 +88,7 @@ ATTENTION: don't read untrusted file. You read the file with common lisp reader.
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))
     (let* ((file (merge-pathnames (make-pathname :type "pdf") (pathname-name file)))
 	   (command (format nil "~a ~a &" *command-pdf-viewer* file)))
-      (uiop:run-program command :output t))))
+      (uiop:launch-program command))))
 
 (defun view-html (file)
   (uiop:with-current-directory ((uiop:pathname-directory-pathname file))

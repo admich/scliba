@@ -1,13 +1,6 @@
 (require 'cl)
 (load "skeletons-cl-authoring" nil)
 
-(defun scliba-compila-guarda-file ()
-  (interactive)
-  (let* ((file-name (buffer-file-name))
-         (comand (concat "(scliba:compila-guarda \"" file-name "\")")))
-    (slime-eval `(swank:eval-and-grab-output ,comand))
-    (message "Compilato file %s" file-name)))
-
 (defun pedb-store-dir ()
   (substring (second (slime-eval '(swank:eval-and-grab-output "(directory-namestring pedb::*esercizi-directory*)"))) 1 -1))
 
@@ -18,6 +11,7 @@
 
 (defun pedb-esercizi-argomenti ()
   (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-argomenti*"))))))
+
 (defun pedb-esercizi-tipi ()
   (car (read-from-string (second (slime-eval '(swank:eval-and-grab-output "pedb::*esercizi-tipi*"))))))
 
@@ -60,10 +54,6 @@
   (first  (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))")))))
   ;; (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))"))))))
   )
-
-
-
-
 
 (defvar pedb-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -129,7 +119,6 @@ Letters do not insert themselves; instead, they are commands."
   "Return the last modified date of an exercise"
   (format-time-string "%Y-%m-%d %H:%M" (sixth (file-attributes exe))))
 
-
 (defun exe-edit-exercise ()
   (interactive)
   (message "%s" (tabulated-list-get-id))
@@ -140,37 +129,6 @@ Letters do not insert themselves; instead, they are commands."
   (let ((exe (tabulated-list-get-id)))
     (with-current-buffer *pedb-raccolta-buffer*
       (insert "\"" (subseq exe 0 -5) "\" \n"))))
-
-
-(defun pedb-genera-esercizio ()
-  (interactive)
-  (let ((comand
-	 (concat "(pedb:compila-esercizio-preview \"" (tabulated-list-get-id) "\")")))
-
-    (slime-eval `(swank:eval-and-grab-output ,comand))
-    (message "Compilato esercizio %s" (tabulated-list-get-id))))
-
-
-(defun pedb-view-exercise ()
-  (interactive)
-  (let ((command (concat "(funcall (scliba::backend-view-fn scliba:*default-backend*) (scliba:standard-output-file \"" (tabulated-list-get-id) "\" scliba:*default-backend*))")))
-    (slime-eval `(swank:eval-and-grab-output ,command))))
-  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-  ;;   (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
-  ;;   (if (file-exists-p pdf)
-  ;; 	(save-excursion (find-alternate-file-other-window pdf))
-  ;;     (message "pdf non presente")))
-  
-
-(defun pedb-compile-and-view-exercise ()
-  (interactive)
-  (save-excursion (pedb-genera-esercizio))
-  (pedb-view-exercise)
-  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-  ;;   (if (file-exists-p pdf)
-  ;; 	(save-excursion (find-alternate-file-other-window pdf))
-  ;;     (message "pdf non presente")))
-  )
 
 (defun pedb-esercizio--print-info (exe)
   (let ((exe-name (file-name-base exe)))
@@ -192,8 +150,43 @@ Letters do not insert themselves; instead, they are commands."
       ;(dolist (i (exe-all-exercise)) (insert (file-name-base i)) (insert "\n"))
       )
     (switch-to-buffer buf)))
+
+;;; compile
+(defun scliba-compila-guarda-file ()
+  (interactive)
+  (let* ((file-name (buffer-file-name))
+         (comand (format "(scliba:compila-guarda %S)" file-name)))
+    (slime-eval `(swank:eval-and-grab-output ,comand))
+    (message "Compilato file %s" file-name)))
 
+(defun pedb-genera-esercizio ()
+  (interactive)
+  (let ((comand
+	 (concat "(pedb:compila-esercizio-preview \"" (tabulated-list-get-id) "\")")))
 
+    (slime-eval `(swank:eval-and-grab-output ,comand))
+    (message "Compilato esercizio %s" (tabulated-list-get-id))))
+
+(defun pedb-view-exercise ()
+  (interactive)
+  (let ((command (concat "(funcall (scliba::backend-view-fn scliba:*default-backend*) (scliba:standard-output-file \"" (tabulated-list-get-id) "\" scliba:*default-backend*))")))
+    (slime-eval `(swank:eval-and-grab-output ,command))))
+  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
+  ;;   (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
+  ;;   (if (file-exists-p pdf)
+  ;; 	(save-excursion (find-alternate-file-other-window pdf))
+  ;;     (message "pdf non presente")))
+  
+
+(defun pedb-compile-and-view-exercise ()
+  (interactive)
+  (save-excursion (pedb-genera-esercizio))
+  (pedb-view-exercise)
+  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
+  ;;   (if (file-exists-p pdf)
+  ;; 	(save-excursion (find-alternate-file-other-window pdf))
+  ;;     (message "pdf non presente")))
+  )
 ;;; prove
 ;(slime-eval-async `(swank:eval-and-grab-output "(+ 1 2)"))
 
