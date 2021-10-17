@@ -146,17 +146,15 @@ enddef;
 
 
 (defmethod export-document :around ((document pedb-document) (backend context-backend))
-  (loop for ff in '("tex/didattica.tex" "tex/env_esercizi.tex" "tex/esercizi.lua") do
+  (loop for ff in '("tex/env_esercizi.tex" "tex/esercizi.lua") do
        (uiop:copy-file (merge-pathnames ff (asdf:system-source-directory :scliba))
                        (merge-pathnames (make-pathname :name (pathname-name ff) :type (pathname-type ff)) *output-file*)))
 
   (format *outstream* "
-% \\usepath[../..]
-\\project didattica
+~&\\environment env_esercizi~%
 ~:[% ~;~]\\enablemode[soluzioni]
 "
-
-	  (get-argument document :soluzioni))
+	      (get-argument document :soluzioni))
   (call-next-method))
 
 (defmethod export-document ((document compito) (backend html-backend))
@@ -164,19 +162,6 @@ enddef;
 			(who:htm (:div :class 'compito
 				       (:h1 (who:str (get-argument document :title)))
 				       (call-next-method)))))
-
-;; (defmethod export-document :before ((document compito) (backend context-backend))
-;;   (let ((outstream (backend-outstream backend)))
-;;     (format *outstream*"
-;; \\usepath[../..]
-;; \\project didattica
-;; ~@[\\setupbodyfont[~dpt]~]
-;; ~@[\\setupinterlinespace[~a]~]
-;; ~:[% ~;~]\\enablemode[soluzioni]
-;; \\starttext
-;; \\compito[title=~A,scuola=none]
-;; \\makecompitotitle
-;; ~@[\\def\\rfoot{~A}~]" (get-argument document :bodyfont) (get-argument document :interline) (get-argument document :soluzioni) (get-argument  document :title) (get-argument document :rfoot))))
 
 (defmethod export-document :before ((document compito) (backend context-backend))
   (write-string *mpinclusion* *outstream*)

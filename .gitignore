@@ -3,3 +3,4 @@
 *.pdf
 *.*~*~
 *.fasl
+/examples/context/
