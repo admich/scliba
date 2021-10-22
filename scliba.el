@@ -51,9 +51,10 @@
 
 (defun pedb-all-exercises ()
   "Return all the exercises"
-  (first  (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))")))))
-  ;; (map 'list (lambda (x) (concat x ".lisp")) (first (read-from-string (second (slime-eval '(swank:eval-and-grab-output "(map 'list #'pathname-name (pedb::tutti-esercizi))"))))))
-  )
+  (first  (read-from-string
+           (second
+            (slime-eval
+             '(swank:eval-and-grab-output "(map 'list (lambda (x) (format nil \"~a\" x)) (pedb:tutti-esercizi))"))))))
 
 (defvar pedb-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -100,8 +101,6 @@ Letters do not insert themselves; instead, they are commands."
   (setq tabulated-list-padding 2)
   ;(add-hook 'tabulated-list-revert-hook 'package-menu--refresh nil t)
   (tabulated-list-init-header))
-
-
 
 (defun pedb-exe-get-topic (exe)
   "Return the argument of an exercise"
@@ -171,22 +170,12 @@ Letters do not insert themselves; instead, they are commands."
   (interactive)
   (let ((command (concat "(funcall (scliba::backend-view-fn scliba:*default-backend*) (scliba:standard-output-file \"" (tabulated-list-get-id) "\" scliba:*default-backend*))")))
     (slime-eval `(swank:eval-and-grab-output ,command))))
-  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-  ;;   (if (not (file-exists-p pdf)) (pedb-genera-esercizio))
-  ;;   (if (file-exists-p pdf)
-  ;; 	(save-excursion (find-alternate-file-other-window pdf))
-  ;;     (message "pdf non presente")))
-  
 
 (defun pedb-compile-and-view-exercise ()
   (interactive)
   (save-excursion (pedb-genera-esercizio))
-  (pedb-view-exercise)
-  ;; (let ((pdf (concat (pedb-preview-dir) (file-name-base (tabulated-list-get-id)) ".pdf")))
-  ;;   (if (file-exists-p pdf)
-  ;; 	(save-excursion (find-alternate-file-other-window pdf))
-  ;;     (message "pdf non presente")))
-  )
+  (pedb-view-exercise))
+
 ;;; prove
 ;(slime-eval-async `(swank:eval-and-grab-output "(+ 1 2)"))
 
