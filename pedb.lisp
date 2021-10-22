@@ -358,9 +358,7 @@ enddef;
 (defclass pedb-html-backend (html-backend)
   ())
 
-
 (defparameter *backends* '(pedb-context-backend pedb-aut-context-backend pedb-html-backend))
-
 
 ;; ;; rivedere
 
@@ -378,8 +376,6 @@ enddef;
   (compila-context (standard-output-file (compito-lisp-file compito) 'context-backend))
   (compila-context (standard-output-file (compito-lisp-file compito) 'aut-context-backend)))
 
-
-
 ;;;; Compiling functions
 ;; rimettere n con backend
 (defun compila-guarda-compito (document &key (n 1) (directory *compiti-directory*) (soluzioni nil) (backend (make-instance 'pedb-context-backend)))
@@ -392,7 +388,6 @@ enddef;
 
 (defun compila-esercizio-preview (document &key (backend *default-backend*))
   (compila document backend))
-
 
 ;;;; Utils
 (defun controlla-esercizi-uguali (eserciziario compito &key (eserciziario-directory *eserciziari-directory*)
@@ -417,31 +412,5 @@ enddef;
     (format stream "~a" *skeleton-compito*))
   (format nil "~a" file))
 
-;; (defun genera-esercizio-preview (esercizio)
-;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-;;     (let* ((backend (make-instance 'context-backend :stream stream))
-;; 	   (*outstream* (backend-outstream backend)))
-;;       (format stream "\\usepath[../..]~%\\project didattica~%")
-;;       (export-document (read-file (merge-pathnames *esercizi-directory*
-;; 						   (make-pathname :name esercizio :type "lisp"))) backend)
-;;       (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
-;;   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
-;; 				     esercizio)))
-;;     (compila-context file :mode "soluzioni")))
 
-
-(defun compila-esercizio-preview (document &key (backend *default-backend*))
-  (compila document backend))
-
-;; (defun genera-esercizio-preview (esercizio)
-;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
-;;     (let* ((backend (make-instance 'context-backend :stream stream))
-;; 	   (*outstream* (backend-outstream backend)))
-;;       (format stream "\\usepath[../..]~%\\project didattica~%")
-;;       (export-document (read-file (merge-pathnames *esercizi-directory*
-;; 						   (make-pathname :name esercizio :type "lisp"))) backend)
-;;       (format stream "~%\\doifmode{soluzioni}{\\printsoluzioni}~%")))
-;;   (let ((file (uiop:merge-pathnames* *esercizi-preview-directory*
-;; 				     esercizio)))
-;;     (compila-context file :mode "soluzioni")))
 
