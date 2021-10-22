@@ -206,6 +206,12 @@ enddef;
 
 (def-enumerated esercizio ())
 
+(defmethod export-document :around ((document esercizio) backend)
+  (if *top-level-document*
+      (let ((doc (make-instance 'compito :arguments '(:title "Esercizio" :soluzioni t) :body (list document))))
+        (export-document doc backend))
+      (call-next-method)))
+
 (defmethod export-document ((document esercizio) (backend aut-context-backend))
   (format *outstream* "~&{\\bf ~d.} " (enumerated-n document)))
 
@@ -362,8 +368,6 @@ enddef;
   "return the lisp file for compito"
   (make-pathname :name name :type "lisp" :directory (pathname-directory *compiti-directory*)))
 
-
-
 (defun export-compito-in-all-backends (compito &key n)
   "genera all the backends for compito "
   (loop for backend in *backends*
@@ -426,8 +430,8 @@ enddef;
 ;;     (compila-context file :mode "soluzioni")))
 
 
-;; (defun compila-esercizio-preview (document &key (backend *default-backend*))
-;;   (compila document backend))
+(defun compila-esercizio-preview (document &key (backend *default-backend*))
+  (compila document backend))
 
 ;; (defun genera-esercizio-preview (esercizio)
 ;;   (with-open-file (stream (merge-pathnames *esercizi-preview-directory* (make-pathname :name esercizio :type "tex")) :direction :output :if-exists :supersede :if-does-not-exist :create)
