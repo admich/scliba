@@ -607,6 +607,9 @@
 (defmethod export-document :around ((document underbar) (backend prog-odt-backend))
   (odt-underline (call-next-method)))
 
+(defmethod export-document :around ((document par) (backend prog-odt-backend))
+  (odt-paragraph () (call-next-method)))
+
 (defmethod export-document ((document u-didattica0) (backend prog-odt-backend))
   (counter-unita-inc)
   (with-document-arguments (title attivita obiettivi) document    
@@ -735,3 +738,25 @@
           (export-document prerequisiti backend))
         (odt-table-cell (:style "TblCellTop") (export-document metodologie backend))
         (odt-table-cell (:style "TblCellTop")(export-document valutazione backend))))))
+
+;;;; Piano di lavoro notizie generali della classe
+;; (defmethod export-document ((document piano-lavoro) (backend prog-odt-backend))
+;;   (odt-paragraph (:style "Titoli")
+;;           (cxml:text "ISTITUTO TECNICO AGRARIO STATALE \"Dionisio Anzilotti di Pescia (PT\"" ))
+;;   ;; (odt-table (:columns '("TabellaSubH.L" "TabellaSubH.R"))
+;;   ;;   (odt-table-row ()
+;;   ;;     (odt-table-cell (:span 2)
+;;   ;;       (odt-paragraph (:style "Titoli")
+;;   ;;         (cxml:text "DOCENTE:")
+;;   ;;         (odt-italic (cxml:text (get-argument document :docente))))))
+;;   ;;   (odt-table-row ()
+;;   ;;     (odt-table-cell (:style "TabellaSubH.L1")
+;;   ;;       (odt-paragraph (:style "Titoli")
+;;   ;;         (cxml:text "MATERIA: ")
+;;   ;;         (odt-italic (cxml:text (get-argument document :materia)))))
+;;   ;;     (odt-table-cell (:style "TabellaSubH.R1")
+;;   ;;       (odt-paragraph (:style "Titoli-destra")
+;;   ;;         (cxml:text "CLASSE: ")
+;;   ;;         (odt-italic (cxml:text (get-argument document :classe)))))))
+;;   ;; (cxml:with-element* ("text" "p") (cxml:text " "))
+;;   )

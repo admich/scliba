@@ -193,7 +193,7 @@
 
 
 (defparameter *testo-valutazione*
-      "Scaturisce da verifiche orali e scritte ,dalla considerazione
+      "Scaturisce da verifiche orali e scritte, dalla considerazione
        dell’atteggiamento, dell’impegno (in particolare per le attività in
        laboratorio si terrà conto dell’autonomia nell’operare e della
        puntualità nella riconsegna delle relazioni sugli esperimenti

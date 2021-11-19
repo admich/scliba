@@ -34,13 +34,11 @@
     (export-document document backend)
     (get-output-stream-string s)))
 
-
 (defmethod export-document ((document t) backend)
   (format *outstream* ""))
 
 (defmethod export-document ((document string) backend)
   (format *outstream* document))
-
 
 (defmethod export-document ((document number) backend)
   (format *outstream* "~a" document))
@@ -48,7 +46,6 @@
 (defmethod export-document ((document list) backend)
   (dolist (x document)
     (export-document x backend)))
-
 
 (defmethod export-document :after ((document authoring-tree) backend) 
   (let ((*top-level-document* nil))
@@ -210,7 +207,6 @@
 ;;; document part core
 
 (def-authoring-tree book)
-
 (def-authoring-tree par)
 
 (def-authoring-tree framedtext (authoring-tree mixin-div-html mixin-startstop-context))
