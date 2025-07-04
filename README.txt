@@ -1,3 +1,5 @@
+This project moved to https://codeberg.org/admich/scliba
+
 A system in common lisp to write book and other document
 * Philosophy
  - write once for different output (pdf, ConTeXt, html, texinfo, epub,
